@@ -1,0 +1,686 @@
+
+<h2 class="sr-only">Dashboard com 6 painéis: localização, planta da rede, áreas de influência, população nodal, vazão nodal e comparação de vazões</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+
+.dash{background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden}
+
+.dash-top{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.dash-top h1{font-size:15px;font-weight:500;flex:1}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info);font-weight:500}
+
+.tab-bar{display:flex;overflow-x:auto;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);scrollbar-width:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:7px;padding:10px 16px;font-size:12px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;flex-shrink:0}
+.tab:hover{color:var(--color-text-primary);background:var(--color-background-primary)}
+.tab.active{color:#185FA5;border-bottom-color:#185FA5;background:var(--color-background-primary)}
+.tab i{font-size:15px}
+
+.panel{display:none;padding:16px}
+.panel.active{display:block}
+
+.map-container{position:relative;width:100%;height:340px;border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-tertiary);background:#e8f0e4}
+.map-container canvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:grab}
+.map-container canvas:active{cursor:grabbing}
+
+.map-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary)}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)}
+.leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.leg-circ{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.leg-line{width:20px;height:2px;flex-shrink:0}
+
+.map-toolbar{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:10}
+.map-btn{width:28px;height:28px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--color-text-primary)}
+.map-btn:hover{background:var(--color-background-secondary)}
+
+.north-arrow{position:absolute;top:10px;left:10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 8px;font-size:10px;font-weight:500;color:var(--color-text-primary);display:flex;flex-direction:column;align-items:center;line-height:1.2}
+
+.metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric .lbl{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+.metric .val{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.metric .sub{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+
+.chart-wrap{position:relative;height:240px;width:100%}
+.panel6-layout{display:grid;grid-template-columns:1fr 220px;gap:14px}
+.info-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);padding:12px}
+.info-box .ib-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.info-row:last-child{border:none}
+.info-row .ik{color:var(--color-text-secondary)}
+.info-row .iv{font-weight:500;color:var(--color-text-primary)}
+
+.obs-item{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--color-text-secondary);margin-bottom:7px}
+.obs-item i{color:#1D9E75;font-size:14px;flex-shrink:0;margin-top:1px}
+
+.upload-strip{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.up-btn{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:12px;font-weight:500;color:var(--color-text-primary);cursor:pointer}
+.up-btn:hover{background:var(--color-background-secondary)}
+.up-btn .dot{width:7px;height:7px;border-radius:50%}
+input[type=file]{display:none}
+
+.status{padding:9px 18px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:7px}
+.s-dot{width:5px;height:5px;border-radius:50%;background:#1D9E75}
+
+.scale-bar{position:absolute;bottom:10px;left:10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:4px;padding:5px 8px;font-size:10px;color:var(--color-text-secondary)}
+
+.legend-colors-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.lc-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)}
+</style>
+
+<div class="dash">
+  <div class="dash-top">
+    <i class="ti ti-droplet" style="font-size:18px;color:#185FA5" aria-hidden="true"></i>
+    <h1>Rede de Abastecimento de Água — Solonópole / CE</h1>
+    <div class="upload-strip" style="margin:0">
+      <label class="up-btn" for="xlsxIn"><span class="dot" style="background:#1D9E75"></span><i class="ti ti-table" aria-hidden="true"></i>Excel</label>
+      <label class="up-btn" for="dxfIn"><span class="dot" style="background:#185FA5"></span><i class="ti ti-vector" aria-hidden="true"></i>DXF</label>
+      <button class="up-btn" id="demoBtn" style="background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-tertiary)"><i class="ti ti-sparkles" aria-hidden="true"></i>Demo</button>
+    </div>
+    <input type="file" id="xlsxIn" accept=".xlsx,.csv,.xls">
+    <input type="file" id="dxfIn" accept=".dxf,.dwg">
+  </div>
+
+  <div class="tab-bar" id="tabBar">
+    <div class="tab active" data-tab="0"><i class="ti ti-map-pin" aria-hidden="true"></i>1. Localização</div>
+    <div class="tab" data-tab="1"><i class="ti ti-topology-star-3" aria-hidden="true"></i>2. Planta da Rede</div>
+    <div class="tab" data-tab="2"><i class="ti ti-layout-grid" aria-hidden="true"></i>3. Áreas de Influência</div>
+    <div class="tab" data-tab="3"><i class="ti ti-users" aria-hidden="true"></i>4. Pop. Nodal (Linear)</div>
+    <div class="tab" data-tab="4"><i class="ti ti-wave-sine" aria-hidden="true"></i>5. Vazão Nodal (L/s)</div>
+    <div class="tab" data-tab="5"><i class="ti ti-chart-bar" aria-hidden="true"></i>6. Comparação</div>
+  </div>
+
+  <!-- PANEL 1: Localização -->
+  <div class="panel active" id="panel0">
+    <div class="metrics-row">
+      <div class="metric"><div class="lbl">Município</div><div class="val" style="font-size:15px">Solonópole</div><div class="sub">Ceará, Brasil</div></div>
+      <div class="metric"><div class="lbl">Área da polígonal</div><div class="val" id="p1area">103,51</div><div class="sub">hectares</div></div>
+      <div class="metric"><div class="lbl">População atual</div><div class="val" id="p1pop0">11.240</div><div class="sub">habitantes</div></div>
+      <div class="metric"><div class="lbl">Horizonte do projeto</div><div class="val">2046</div><div class="sub">20 anos</div></div>
+    </div>
+    <div class="map-container" id="mapLoc">
+      <canvas id="cLoc"></canvas>
+      <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
+      <div class="map-toolbar">
+        <button class="map-btn" onclick="zoom('cLoc',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('cLoc',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('cLoc')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+      </div>
+      <div class="scale-bar">0 — 250 — 500 m</div>
+    </div>
+    <div class="map-legend">
+      <span class="leg-item"><span class="leg-line" style="background:#d44;height:2px;border-top:2px dashed #d44"></span> Limite municipal</span>
+      <span class="leg-item"><span class="leg-sq" style="background:#c8a87a"></span> Área urbana</span>
+      <span class="leg-item"><span class="leg-line" style="background:#4a9;height:2px"></span> Área estudada</span>
+    </div>
+  </div>
+
+  <!-- PANEL 2: Planta da Rede -->
+  <div class="panel" id="panel1">
+    <div class="metrics-row">
+      <div class="metric"><div class="lbl">Nós de consumo</div><div class="val" id="p2nodes">20</div><div class="sub">pontos de demanda</div></div>
+      <div class="metric"><div class="lbl">RAP</div><div class="val">1</div><div class="sub">reservatório apoiado</div></div>
+      <div class="metric"><div class="lbl">Trechos</div><div class="val" id="p2pipes">28</div><div class="sub">segmentos de rede</div></div>
+      <div class="metric"><div class="lbl">Extensão total</div><div class="val" id="p2ext">—</div><div class="sub">metros</div></div>
+    </div>
+    <div class="map-container" id="mapRede">
+      <canvas id="cRede"></canvas>
+      <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
+      <div class="map-toolbar">
+        <button class="map-btn" onclick="zoom('cRede',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('cRede',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('cRede')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+      </div>
+      <div class="scale-bar">0 — 125 — 500 m</div>
+    </div>
+    <div class="map-legend">
+      <span class="leg-item"><span class="leg-sq" style="background:#D85A30;border-radius:2px"></span> RAP</span>
+      <span class="leg-item"><span class="leg-circ" style="background:#185FA5"></span> Nós</span>
+      <span class="leg-item"><span class="leg-line" style="background:#378ADD"></span> Rede de distribuição</span>
+      <span class="leg-item"><span class="leg-line" style="background:#bbb"></span> Arruamento</span>
+      <span class="leg-item"><span class="leg-line" style="background:#e8a;border-top:1px dashed #e8a"></span> Curvas de nível (5m)</span>
+    </div>
+  </div>
+
+  <!-- PANEL 3: Áreas de Influência -->
+  <div class="panel" id="panel2">
+    <div class="metrics-row">
+      <div class="metric"><div class="lbl">Área total</div><div class="val" id="p3area">103,5</div><div class="sub">ha</div></div>
+      <div class="metric"><div class="lbl">Maior área nodal</div><div class="val" id="p3max">—</div><div class="sub">ha</div></div>
+      <div class="metric"><div class="lbl">Menor área nodal</div><div class="val" id="p3min">—</div><div class="sub">ha</div></div>
+      <div class="metric"><div class="lbl">Método</div><div class="val" style="font-size:13px">Área Nodal</div><div class="sub">Thiessen / Voronoi</div></div>
+    </div>
+    <div class="map-container" id="mapArea">
+      <canvas id="cArea"></canvas>
+      <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
+      <div class="map-toolbar">
+        <button class="map-btn" onclick="zoom('cArea',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('cArea',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('cArea')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+      </div>
+      <div class="scale-bar">0 — 125 — 500 m</div>
+    </div>
+    <div class="map-legend" id="areaLegend">
+      <span class="leg-item"><span class="leg-sq" style="background:#D85A30"></span> RAP</span>
+      <span class="leg-item"><span class="leg-circ" style="background:#185FA5"></span> Nós</span>
+      <span class="leg-item"><span class="leg-sq" style="background:rgba(100,160,100,.4);border:1px solid #4a9"></span> Áreas de influência</span>
+    </div>
+  </div>
+
+  <!-- PANEL 4: Pop. Nodal -->
+  <div class="panel" id="panel3">
+    <div class="metrics-row">
+      <div class="metric"><div class="lbl">Pop. total atual</div><div class="val" id="p4pop0">—</div><div class="sub">habitantes</div></div>
+      <div class="metric"><div class="lbl">Pop. projeto (2046)</div><div class="val" id="p4popProj">18.851</div><div class="sub">habitantes</div></div>
+      <div class="metric"><div class="lbl">Crescimento</div><div class="val" id="p4growth">1,5%</div><div class="sub">ao ano</div></div>
+      <div class="metric"><div class="lbl">Nó maior pop.</div><div class="val" id="p4maxNode">—</div><div class="sub">hab. (projeto)</div></div>
+    </div>
+    <div class="map-container" id="mapPop">
+      <canvas id="cPop"></canvas>
+      <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
+      <div class="map-toolbar">
+        <button class="map-btn" onclick="zoom('cPop',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('cPop',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('cPop')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+      </div>
+      <div class="scale-bar">0 — 125 — 500 m</div>
+    </div>
+    <div class="map-legend">
+      <span class="leg-item"><span class="leg-sq" style="background:#D85A30"></span> RAP</span>
+      <span class="leg-item"><span class="leg-circ" style="background:#083d6e"></span> Alta pop. (>1000 hab)</span>
+      <span class="leg-item"><span class="leg-circ" style="background:#378ADD"></span> Média pop.</span>
+      <span class="leg-item"><span class="leg-circ" style="background:#B5D4F4"></span> Baixa pop. (&lt;400 hab)</span>
+    </div>
+  </div>
+
+  <!-- PANEL 5: Vazão Nodal -->
+  <div class="panel" id="panel4">
+    <div class="metrics-row">
+      <div class="metric"><div class="lbl">Vazão total (Linear)</div><div class="val" id="p5qlin">—</div><div class="sub">L/s</div></div>
+      <div class="metric"><div class="lbl">Vazão máxima nó</div><div class="val" id="p5qmax">—</div><div class="sub">L/s</div></div>
+      <div class="metric"><div class="lbl">q (per capita)</div><div class="val" id="p5q">150</div><div class="sub">L/hab.dia</div></div>
+      <div class="metric"><div class="lbl">K₁ × K₂</div><div class="val" id="p5kk">1,80</div><div class="sub">coeficientes</div></div>
+    </div>
+    <div class="map-container" id="mapVaz">
+      <canvas id="cVaz"></canvas>
+      <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
+      <div class="map-toolbar">
+        <button class="map-btn" onclick="zoom('cVaz',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('cVaz',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('cVaz')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+      </div>
+      <div class="scale-bar">0 — 125 — 500 m</div>
+    </div>
+    <div class="map-legend">
+      <span class="leg-item"><span class="leg-sq" style="background:#D85A30"></span> RAP</span>
+      <span class="leg-item"><span class="leg-sq" style="background:#7B2A0A;border-radius:50%"></span> Alta vazão (>2 L/s)</span>
+      <span class="leg-item"><span class="leg-sq" style="background:#D85A30;border-radius:50%"></span> Média vazão</span>
+      <span class="leg-item"><span class="leg-sq" style="background:#F5C4B3;border-radius:50%"></span> Baixa vazão</span>
+    </div>
+  </div>
+
+  <!-- PANEL 6: Comparação -->
+  <div class="panel" id="panel5">
+    <div class="panel6-layout">
+      <div>
+        <div class="chart-wrap">
+          <canvas id="flowChart" role="img" aria-label="Comparação de vazão nodal entre método linear e área nodal para cada nó da rede"></canvas>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="info-box">
+          <div class="ib-title">Resumo geral</div>
+          <div class="info-row"><span class="ik">Linear</span><span class="iv" id="c6lin">—</span></div>
+          <div class="info-row"><span class="ik">Área Nodal</span><span class="iv" id="c6nod">—</span></div>
+          <div class="info-row"><span class="ik">Diferença</span><span class="iv" id="c6diff">—</span></div>
+        </div>
+        <div class="info-box">
+          <div class="ib-title">Principais observações</div>
+          <div class="obs-item"><i class="ti ti-check" aria-hidden="true"></i><span>Resultados globais muito próximos</span></div>
+          <div class="obs-item"><i class="ti ti-check" aria-hidden="true"></i><span>Diferenças locais devidas à geometria</span></div>
+          <div class="obs-item"><i class="ti ti-check" aria-hidden="true"></i><span>Método linear mais estável para redes irregulares</span></div>
+        </div>
+        <div class="info-box">
+          <div class="ib-title">Parâmetros utilizados</div>
+          <div class="info-row"><span class="ik">q</span><span class="iv" id="c6q">150 L/hab.dia</span></div>
+          <div class="info-row"><span class="ik">K₁</span><span class="iv" id="c6k1">1,2</span></div>
+          <div class="info-row"><span class="ik">K₂</span><span class="iv" id="c6k2">1,5</span></div>
+          <div class="info-row"><span class="ik">Perdas</span><span class="iv" id="c6loss">30%</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="chart-legend" style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-secondary)"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block"></span>Método Linear</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-secondary)"><span style="width:10px;height:10px;border-radius:2px;background:#D85A30;display:inline-block"></span>Método Área Nodal</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="status">
+    <span class="s-dot"></span>
+    <span id="statusMsg">Clique em "Demo" para carregar os dados de Solonópole ou importe seus arquivos</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const DEMO = [
+  {id:'RAP',x:220,y:55,pop0:0,areaInf:0,isRAP:true,conn:['N1','N2','N7']},
+  {id:'N1',x:155,y:125,pop0:580,areaInf:48200,conn:['N2','N4']},
+  {id:'N2',x:260,y:135,pop0:720,areaInf:55000,conn:['N3','N5']},
+  {id:'N3',x:325,y:165,pop0:450,areaInf:38500,conn:['N6','N12']},
+  {id:'N4',x:105,y:205,pop0:830,areaInf:62000,conn:['N8','N10']},
+  {id:'N5',x:305,y:235,pop0:610,areaInf:51000,conn:['N6','N9']},
+  {id:'N6',x:375,y:265,pop0:390,areaInf:33000,conn:['N13','N19']},
+  {id:'N7',x:185,y:185,pop0:760,areaInf:58000,conn:['N8','N13']},
+  {id:'N8',x:150,y:265,pop0:920,areaInf:70000,conn:['N10','N15']},
+  {id:'N9',x:345,y:315,pop0:540,areaInf:44500,conn:['N12','N16']},
+  {id:'N10',x:95,y:315,pop0:680,areaInf:53000,conn:['N11','N15']},
+  {id:'N11',x:55,y:385,pop0:410,areaInf:35000,conn:['N18']},
+  {id:'N12',x:375,y:195,pop0:550,areaInf:46000,conn:['N19']},
+  {id:'N13',x:255,y:305,pop0:870,areaInf:65000,conn:['N14','N16']},
+  {id:'N14',x:200,y:375,pop0:490,areaInf:41000,conn:['N15','N17']},
+  {id:'N15',x:150,y:375,pop0:660,areaInf:52500,conn:['N18']},
+  {id:'N16',x:315,y:375,pop0:430,areaInf:36000,conn:['N17','N20']},
+  {id:'N17',x:260,y:425,pop0:570,areaInf:47500,conn:['N20']},
+  {id:'N18',x:105,y:445,pop0:380,areaInf:32000,conn:[]},
+  {id:'N19',x:415,y:315,pop0:620,areaInf:50000,conn:['N20']},
+  {id:'N20',x:360,y:440,pop0:500,areaInf:42000,conn:[]},
+];
+
+const AREA_COLORS=['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f','#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00'];
+
+let nodes=[], flowChartInst=null;
+const scales={}, offsets={};
+
+function initView(id){scales[id]=1;offsets[id]={x:0,y:0};}
+function zoom(id,f){scales[id]=(scales[id]||1)*f;redrawAll();}
+function resetView(id){scales[id]=1;offsets[id]={x:0,y:0};redrawAll();}
+
+function project(nodes,W,H,id){
+  const sc=scales[id]||1, off=offsets[id]||{x:0,y:0};
+  const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
+  const mnX=Math.min(...xs),mxX=Math.max(...xs),mnY=Math.min(...ys),mxY=Math.max(...ys);
+  const pad=45;
+  const bsc=Math.min((W-pad*2)/(mxX-mnX||1),(H-pad*2)/(mxY-mnY||1));
+  return n=>({
+    px:(n.x-mnX)*bsc*sc+pad+off.x,
+    py:(n.y-mnY)*bsc*sc+pad+off.y
+  });
+}
+
+function setupDrag(canvasId){
+  const c=document.getElementById(canvasId);
+  if(!c||c._drag)return;
+  c._drag=true;
+  let drag=false,lx=0,ly=0;
+  c.addEventListener('mousedown',e=>{drag=true;lx=e.offsetX;ly=e.offsetY;});
+  c.addEventListener('mousemove',e=>{
+    if(!drag)return;
+    offsets[canvasId]=offsets[canvasId]||{x:0,y:0};
+    offsets[canvasId].x+=e.offsetX-lx;
+    offsets[canvasId].y+=e.offsetY-ly;
+    lx=e.offsetX;ly=e.offsetY;
+    redrawAll();
+  });
+  c.addEventListener('mouseup',()=>drag=false);
+  c.addEventListener('mouseleave',()=>drag=false);
+  c.addEventListener('wheel',e=>{
+    e.preventDefault();
+    scales[canvasId]=(scales[canvasId]||1)*(e.deltaY<0?1.12:0.88);
+    redrawAll();
+  },{passive:false});
+}
+
+function prepCanvas(id){
+  const c=document.getElementById(id);
+  if(!c)return null;
+  const cont=c.parentElement;
+  c.width=cont.offsetWidth*(window.devicePixelRatio||1);
+  c.height=cont.offsetHeight*(window.devicePixelRatio||1);
+  const ctx=c.getContext('2d');
+  ctx.scale(window.devicePixelRatio||1,window.devicePixelRatio||1);
+  return {c,ctx,W:cont.offsetWidth,H:cont.offsetHeight};
+}
+
+function drawStreetGrid(ctx,W,H){
+  ctx.save();
+  ctx.strokeStyle='rgba(180,170,155,0.35)';
+  ctx.lineWidth=0.8;
+  for(let x=30;x<W;x+=38){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+(Math.random()-0.5)*8,H);ctx.stroke();}
+  for(let y=30;y<H;y+=35){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+(Math.random()-0.5)*6);ctx.stroke();}
+  ctx.restore();
+}
+
+function drawContours(ctx,W,H){
+  ctx.save();
+  ctx.strokeStyle='rgba(210,180,120,0.25)';
+  ctx.lineWidth=0.7;
+  ctx.setLineDash([4,4]);
+  for(let i=0;i<5;i++){
+    ctx.beginPath();
+    const cy=H*0.15+i*(H*0.14);
+    ctx.ellipse(W/2+(i%2)*20,cy,W*0.35+i*18,H*0.06,0.1,0,Math.PI*2);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawMapBg(ctx,W,H){
+  ctx.fillStyle='#edf2e8';
+  ctx.fillRect(0,0,W,H);
+  drawContours(ctx,W,H);
+  drawStreetGrid(ctx,W,H);
+}
+
+function drawConnections(ctx,nodes,proj,color,width){
+  const map={};nodes.forEach(n=>map[n.id]=n);
+  ctx.strokeStyle=color;ctx.lineWidth=width;
+  nodes.forEach(n=>{
+    (n.conn||[]).forEach(cId=>{
+      const c=map[cId];if(!c)return;
+      const a=proj(n),b=proj(c);
+      ctx.beginPath();ctx.moveTo(a.px,a.py);ctx.lineTo(b.px,b.py);ctx.stroke();
+    });
+  });
+}
+
+// Panel 1: Localização
+function drawLoc(){
+  const r=prepCanvas('cLoc');if(!r)return;
+  const{ctx,W,H}=r;
+  ctx.fillStyle='#d4e8f0';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#c8d4b8';
+  ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.38,H*0.42,0.1,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#d4c8a0';
+  ctx.beginPath();ctx.ellipse(W/2+20,H/2+10,W*0.3,H*0.32,0.05,0,Math.PI*2);ctx.fill();
+  drawStreetGrid(ctx,W,H);
+  ctx.strokeStyle='#e44';ctx.lineWidth=2;ctx.setLineDash([8,5]);
+  ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.32,H*0.36,0.1,0,Math.PI*2);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle='#2a8';ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(W/2+5,H/2+5,W*0.22,H*0.26,0.05,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#185FA5';ctx.beginPath();ctx.arc(W/2+5,H/2+5,5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+  ctx.fillText('Solonópole',W/2+5,H/2-8);
+  ctx.font='10px sans-serif';ctx.fillStyle='var(--color-text-secondary,#666)';
+  ctx.fillText('Ceará — Brasil',W/2+5,H/2+5);
+  ctx.fillStyle='rgba(24,95,165,0.1)';
+  ctx.beginPath();ctx.ellipse(W/2+5,H/2+5,W*0.22,H*0.26,0.05,0,Math.PI*2);ctx.fill();
+}
+
+// Panel 2: Planta da Rede
+function drawRede(){
+  const r=prepCanvas('cRede');if(!r||!nodes.length)return;
+  const{ctx,W,H}=r;
+  drawMapBg(ctx,W,H);
+  const proj=project(nodes,W,H,'cRede');
+  drawConnections(ctx,nodes,proj,'rgba(55,138,221,0.8)',1.8);
+  nodes.forEach(n=>{
+    const{px,py}=proj(n);
+    if(n.isRAP){
+      ctx.fillStyle='#D85A30';
+      ctx.fillRect(px-8,py-8,16,16);
+      ctx.fillStyle='#fff';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('R',px,py);
+    }else{
+      ctx.fillStyle='#185FA5';ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(24,95,165,0.15)';ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);ctx.fill();
+    }
+    ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(n.id,px,py+7);
+  });
+}
+
+// Panel 3: Áreas de Influência
+function drawAreas(){
+  const r=prepCanvas('cArea');if(!r||!nodes.length)return;
+  const{ctx,W,H}=r;
+  drawMapBg(ctx,W,H);
+  const proj=project(nodes,W,H,'cArea');
+  const nonRAP=nodes.filter(n=>!n.isRAP);
+  nonRAP.forEach((n,i)=>{
+    const{px,py}=proj(n);
+    const rad=Math.sqrt(n.areaInf/Math.PI)*0.012*(scales['cArea']||1)*60;
+    ctx.fillStyle=AREA_COLORS[i%AREA_COLORS.length]+'88';
+    ctx.strokeStyle=AREA_COLORS[i%AREA_COLORS.length]+'cc';
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(px,py,Math.max(rad,18),0,Math.PI*2);ctx.fill();ctx.stroke();
+  });
+  drawConnections(ctx,nodes,proj,'rgba(55,138,221,0.6)',1.4);
+  nodes.forEach(n=>{
+    const{px,py}=proj(n);
+    if(n.isRAP){ctx.fillStyle='#D85A30';ctx.fillRect(px-7,py-7,14,14);}
+    else{ctx.fillStyle='#185FA5';ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(n.id,px,py+6);
+  });
+}
+
+// Panel 4: Pop Nodal
+function drawPop(){
+  const r=prepCanvas('cPop');if(!r||!nodes.length)return;
+  const{ctx,W,H}=r;
+  drawMapBg(ctx,W,H);
+  const proj=project(nodes,W,H,'cPop');
+  const nonRAP=nodes.filter(n=>!n.isRAP);
+  const maxP=Math.max(...nonRAP.map(n=>n.popProj||n.pop0));
+  drawConnections(ctx,nodes,proj,'rgba(55,138,221,0.5)',1.2);
+  nonRAP.forEach(n=>{
+    const{px,py}=proj(n);
+    const pop=n.popProj||n.pop0;
+    const t=pop/maxP;
+    const h=Math.max(8,t*60*(scales['cPop']||1));
+    const col=t>0.75?'#083d6e':t>0.4?'#185FA5':'#B5D4F4';
+    ctx.fillStyle=col+'cc';
+    ctx.fillRect(px-5,py-h,10,h);
+    ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='8px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText(pop.toLocaleString('pt-BR'),px,py-h-1);
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();
+  });
+  const rap=nodes.find(n=>n.isRAP);
+  if(rap){const{px,py}=proj(rap);ctx.fillStyle='#D85A30';ctx.fillRect(px-7,py-7,14,14);}
+}
+
+// Panel 5: Vazão Nodal
+function drawVaz(){
+  const r=prepCanvas('cVaz');if(!r||!nodes.length)return;
+  const{ctx,W,H}=r;
+  drawMapBg(ctx,W,H);
+  const proj=project(nodes,W,H,'cVaz');
+  const nonRAP=nodes.filter(n=>!n.isRAP);
+  const maxQ=Math.max(...nonRAP.map(n=>n.qLinear||0));
+  drawConnections(ctx,nodes,proj,'rgba(55,138,221,0.5)',1.2);
+  nonRAP.forEach(n=>{
+    const{px,py}=proj(n);
+    const q=n.qLinear||0;
+    const t=maxQ>0?q/maxQ:0;
+    const h=Math.max(6,t*65*(scales['cVaz']||1));
+    const col=t>0.7?'#7B2A0A':t>0.35?'#D85A30':'#F5C4B3';
+    ctx.fillStyle=col+'cc';
+    ctx.fillRect(px-5,py-h,10,h);
+    ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='8px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText(q.toFixed(2),px,py-h-1);
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();
+  });
+  const rap=nodes.find(n=>n.isRAP);
+  if(rap){const{px,py}=proj(rap);ctx.fillStyle='#D85A30';ctx.fillRect(px-7,py-7,14,14);}
+}
+
+function drawFlowChart(){
+  const nonRAP=nodes.filter(n=>!n.isRAP);
+  if(!nonRAP.length)return;
+  if(flowChartInst){flowChartInst.destroy();}
+  flowChartInst=new Chart(document.getElementById('flowChart'),{
+    type:'bar',
+    data:{
+      labels:nonRAP.map(n=>n.id),
+      datasets:[
+        {label:'Método Linear',data:nonRAP.map(n=>parseFloat((n.qLinear||0).toFixed(3))),backgroundColor:'#185FA5',borderWidth:0},
+        {label:'Método Área Nodal',data:nonRAP.map(n=>parseFloat((n.qNodal||0).toFixed(3))),backgroundColor:'#D85A30',borderWidth:0}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:10},autoSkip:false,maxRotation:0},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>v.toFixed(1)},title:{display:true,text:'Vazão (L/s)',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function updateMetrics(){
+  const nonRAP=nodes.filter(n=>!n.isRAP);
+  const pop0=nonRAP.reduce((s,n)=>s+n.pop0,0);
+  const popProj=nonRAP.reduce((s,n)=>s+(n.popProj||n.pop0),0);
+  const qLin=nonRAP.reduce((s,n)=>s+(n.qLinear||0),0);
+  const qNod=nonRAP.reduce((s,n)=>s+(n.qNodal||0),0);
+  const maxP=nonRAP.reduce((a,b)=>(b.popProj||b.pop0)>(a.popProj||a.pop0)?b:a,nonRAP[0]||{});
+  const maxQ=nonRAP.reduce((a,b)=>(b.qLinear||0)>(a.qLinear||0)?b:a,nonRAP[0]||{});
+  const totalArea=nonRAP.reduce((s,n)=>s+n.areaInf,0);
+  const maxArea=Math.max(...nonRAP.map(n=>n.areaInf));
+  const minArea=Math.min(...nonRAP.map(n=>n.areaInf));
+  const diff=(qLin>0?(qNod-qLin)/qLin*100:0);
+
+  document.getElementById('p1pop0').textContent=pop0.toLocaleString('pt-BR');
+  document.getElementById('p1area').textContent=(totalArea/10000).toFixed(1);
+  document.getElementById('p2nodes').textContent=nonRAP.length;
+  let pipes=0;nodes.forEach(n=>pipes+=(n.conn||[]).length);
+  document.getElementById('p2pipes').textContent=pipes;
+  document.getElementById('p3area').textContent=(totalArea/10000).toFixed(1);
+  document.getElementById('p3max').textContent=(maxArea/10000).toFixed(1);
+  document.getElementById('p3min').textContent=(minArea/10000).toFixed(1);
+  document.getElementById('p4pop0').textContent=pop0.toLocaleString('pt-BR');
+  document.getElementById('p4popProj').textContent=popProj.toLocaleString('pt-BR');
+  document.getElementById('p4maxNode').textContent=maxP.id||'—';
+  document.getElementById('p5qlin').textContent=qLin.toFixed(2);
+  document.getElementById('p5qmax').textContent=(maxQ.qLinear||0).toFixed(2);
+  document.getElementById('c6lin').textContent=qLin.toFixed(2)+' L/s';
+  document.getElementById('c6nod').textContent=qNod.toFixed(2)+' L/s';
+  document.getElementById('c6diff').textContent=(diff>=0?'+':'')+diff.toFixed(2)+'%';
+}
+
+function calcDemand(){
+  const q=150,k1=1.2,k2=1.5,loss=0.3,r=0.015,h=20;
+  const totalArea=nodes.filter(n=>!n.isRAP).reduce((s,n)=>s+n.areaInf,0);
+  const totalPopProj=nodes.filter(n=>!n.isRAP).reduce((s,n)=>s+Math.round(n.pop0*Math.pow(1+r,h)),0);
+  const qUnit=(q*k1*k2)/(86400*(1-loss));
+  nodes.forEach(n=>{
+    if(n.isRAP){n.popProj=0;n.qLinear=0;n.qNodal=0;return;}
+    n.popProj=Math.round(n.pop0*Math.pow(1+r,h));
+    n.qLinear=n.popProj*qUnit;
+    n.qNodal=totalPopProj*qUnit*(n.areaInf/totalArea);
+  });
+}
+
+function redrawAll(){
+  drawLoc();drawRede();drawAreas();drawPop();drawVaz();
+}
+
+function initAll(){
+  ['cLoc','cRede','cArea','cPop','cVaz'].forEach(id=>{initView(id);setupDrag(id);});
+  calcDemand();
+  updateMetrics();
+  redrawAll();
+  drawFlowChart();
+  document.getElementById('statusMsg').textContent='Dados carregados — '+nodes.filter(n=>!n.isRAP).length+' nós, navegue pelas 6 abas';
+}
+
+document.getElementById('demoBtn').addEventListener('click',()=>{
+  nodes=DEMO.map(n=>({...n}));
+  initAll();
+});
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel'+t.dataset.tab).classList.add('active');
+    setTimeout(()=>redrawAll(),50);
+  });
+});
+
+document.getElementById('xlsxIn').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws);
+      nodes=rows.map((r,i)=>{
+        const id=String(r['No']||r['Nó']||r['ID']||r['id']||('N'+(i+1)));
+        return{
+          id,
+          pop0:parseFloat(r['Pop_Atual']||r['pop0']||r['Pop0']||r['populacao']||500),
+          areaInf:parseFloat(r['Area_Inf']||r['areaInf']||r['AreaInf']||r['area']||40000),
+          x:parseFloat(r['X']||r['x']||Math.random()*400+50),
+          y:parseFloat(r['Y']||r['y']||Math.random()*380+50),
+          isRAP:id.toUpperCase().includes('RAP'),
+          conn:[],
+        };
+      });
+      initAll();
+      document.getElementById('statusMsg').textContent='Planilha carregada: '+nodes.length+' registros';
+    }catch(err){document.getElementById('statusMsg').textContent='Erro: '+err.message;}
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+document.getElementById('dxfIn').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const text=ev.target.result;
+    const lines=text.split(/\r?\n/);
+    const parsed=[],lineObjs=[];let i=0;
+    while(i<lines.length){
+      if(lines[i].trim()==='INSERT'){
+        let n={id:'',x:0,y:0,conn:[],pop0:500,areaInf:40000};i++;
+        while(i<lines.length){
+          const code=parseInt(lines[i].trim()),val=(lines[i+1]||'').trim();
+          if(code===2)n.id=val;if(code===10)n.x=parseFloat(val)||0;if(code===20)n.y=parseFloat(val)||0;
+          i+=2;if(isNaN(code))break;
+        }
+        if(n.id){n.isRAP=n.id.toUpperCase().includes('RAP');parsed.push(n);}
+      }else if(lines[i].trim()==='LINE'){
+        let ln={x1:0,y1:0,x2:0,y2:0};i++;
+        while(i<lines.length){
+          const code=parseInt(lines[i].trim()),val=(lines[i+1]||'').trim();
+          if(code===10)ln.x1=parseFloat(val)||0;if(code===20)ln.y1=parseFloat(val)||0;
+          if(code===11)ln.x2=parseFloat(val)||0;if(code===21)ln.y2=parseFloat(val)||0;
+          i+=2;if(isNaN(code))break;
+        }
+        lineObjs.push(ln);
+      }else i++;
+    }
+    if(parsed.length>0){
+      if(nodes.length>0){
+        const dm={};parsed.forEach(n=>dm[n.id]=n);
+        nodes=nodes.map(n=>dm[n.id]?{...n,x:dm[n.id].x,y:dm[n.id].y}:n);
+      }else nodes=parsed;
+      const tol=2;
+      nodes.forEach(n=>{lineObjs.forEach(ln=>{
+        const d1=Math.hypot(n.x-ln.x1,n.y-ln.y1),d2=Math.hypot(n.x-ln.x2,n.y-ln.y2);
+        if(d1<tol||d2<tol){
+          const other=nodes.find(o=>o.id!==n.id&&(Math.hypot(o.x-ln.x2,o.y-ln.y2)<tol||Math.hypot(o.x-ln.x1,o.y-ln.y1)<tol));
+          if(other&&!(n.conn||[]).includes(other.id)){if(!n.conn)n.conn=[];n.conn.push(other.id);}
+        }
+      });});
+      initAll();
+      document.getElementById('statusMsg').textContent='DXF carregado: '+parsed.length+' pontos extraídos';
+    }else{document.getElementById('statusMsg').textContent='DXF: nenhum bloco INSERT encontrado';}
+  };
+  reader.readAsText(file);
+});
+
+window.zoom=zoom;window.resetView=resetView;
+</script>
