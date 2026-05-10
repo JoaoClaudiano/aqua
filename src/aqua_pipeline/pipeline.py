@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import unicodedata
 
 import geopandas as gpd
 from shapely.geometry import box
@@ -21,6 +22,29 @@ from .cartography import (
     make_proportional_symbol_map,
     make_voronoi_map,
 )
+
+
+def _normalize_colname(value: str) -> str:
+    text = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode("ascii")
+    return " ".join(text.lower().strip().split())
+
+
+def _resolve_column(columns, preferred: str, aliases: list[str]) -> str | None:
+    columns = list(columns)
+    if preferred in columns:
+        return preferred
+
+    normalized_to_original = {_normalize_colname(col): col for col in columns}
+    preferred_norm = _normalize_colname(preferred)
+    if preferred_norm in normalized_to_original:
+        return normalized_to_original[preferred_norm]
+
+    for alias in aliases:
+        alias_norm = _normalize_colname(alias)
+        if alias_norm in normalized_to_original:
+            return normalized_to_original[alias_norm]
+
+    return None
 
 
 class WaterNetworkMapPipeline:
@@ -44,32 +68,70 @@ class WaterNetworkMapPipeline:
 
         pipes, cad_nodes = load_cad_network(self.config.cad_file, source_crs=self.config.source_crs)
         excel_nodes = load_excel_nodes(self.config.nodes_excel)
+        excel_node_id_col = _resolve_column(
+            excel_nodes.columns,
+            self.config.node_id_col_excel,
+            ["nó", "no", "node_id", "node id", "node"],
+        )
 
         if pipes.empty:
             raise RuntimeError("Nenhuma tubulação válida encontrada no CAD.")
 
         if cad_nodes.empty and {"x", "y"}.issubset(set(excel_nodes.columns)):
+            if excel_node_id_col is None:
+                raise RuntimeError(
+                    "A planilha possui x/y, mas não foi possível localizar a coluna de ID nodal para criar os nós."
+                )
             cad_nodes = gpd.GeoDataFrame(
                 excel_nodes.copy(),
                 geometry=gpd.points_from_xy(excel_nodes["x"], excel_nodes["y"]),
                 crs=self.config.source_crs,
             )
-            cad_nodes[self.config.node_id_col_cad] = cad_nodes[self.config.node_id_col_excel].astype(str)
+            cad_nodes[self.config.node_id_col_cad] = cad_nodes[excel_node_id_col].astype(str)
 
         if cad_nodes.empty:
             raise RuntimeError("Nenhum nó CAD encontrado e a planilha não possui colunas x/y para georreferenciamento.")
+
+        cad_node_id_col = _resolve_column(
+            cad_nodes.columns,
+            self.config.node_id_col_cad,
+            ["node_id", "id_no", "id nó", "nó", "no"],
+        )
+        if cad_node_id_col is None:
+            raise RuntimeError(
+                f"Não foi possível localizar coluna de ID nodal no CAD. Colunas disponíveis: {list(cad_nodes.columns)}"
+            )
+        if excel_node_id_col is None:
+            raise RuntimeError(
+                f"Não foi possível localizar coluna de ID nodal na planilha. Colunas disponíveis: {list(excel_nodes.columns)}"
+            )
 
         pipes_sirgas = ensure_crs(pipes, self.config.target_crs)
         nodes_sirgas = ensure_crs(cad_nodes, self.config.target_crs)
         nodes_sirgas = join_nodes_with_excel(
             nodes_sirgas,
             excel_nodes,
-            node_id_col_cad=self.config.node_id_col_cad,
-            node_id_col_excel=self.config.node_id_col_excel,
+            node_id_col_cad=cad_node_id_col,
+            node_id_col_excel=excel_node_id_col,
         )
 
-        nodes_sirgas = classify_quantiles(nodes_sirgas, self.config.population_col)
-        nodes_sirgas = classify_quantiles(nodes_sirgas, self.config.flow_col)
+        population_col = _resolve_column(
+            nodes_sirgas.columns,
+            self.config.population_col,
+            ["população", "populacao", "pop. do nó (hab)", "pop. do no (hab)", "population"],
+        )
+        flow_col = _resolve_column(
+            nodes_sirgas.columns,
+            self.config.flow_col,
+            ["vazão nodal qmh (l/s)", "vazao nodal qmh (l/s)", "flow_lps", "qmh área nodal (l/s)"],
+        )
+        if population_col is None or flow_col is None:
+            raise RuntimeError(
+                "Não foi possível localizar automaticamente as colunas de população e vazão na planilha após o vínculo."
+            )
+
+        nodes_sirgas = classify_quantiles(nodes_sirgas, population_col)
+        nodes_sirgas = classify_quantiles(nodes_sirgas, flow_col)
 
         pipes_metric = pipes_sirgas.to_crs(pipes_sirgas.estimate_utm_crs())
         nodes_metric = nodes_sirgas.to_crs(pipes_metric.crs)
@@ -119,7 +181,7 @@ class WaterNetworkMapPipeline:
         )
         make_proportional_symbol_map(
             nodes_metric,
-            self.config.population_col,
+            population_col,
             "Mapa de População Nodal (Símbolos Proporcionais)",
             self.output_dir / "04_populacao_nodal",
             self.config.export.layout,
@@ -129,7 +191,7 @@ class WaterNetworkMapPipeline:
         )
         make_proportional_symbol_map(
             nodes_metric,
-            self.config.flow_col,
+            flow_col,
             "Mapa de Vazão Nodal (L/s)",
             self.output_dir / "05_vazao_nodal",
             self.config.export.layout,
@@ -139,8 +201,8 @@ class WaterNetworkMapPipeline:
         )
         make_comparison_panel(
             nodes_metric,
-            self.config.population_col,
-            self.config.flow_col,
+            population_col,
+            flow_col,
             self.output_dir / "06_painel_comparativo",
             self.config.export.layout,
             self.config.export.formats,

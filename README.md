@@ -44,3 +44,5 @@ python scripts/run_pipeline.py --config config.example.yaml
 
 - Arquivos **DWG** devem ser convertidos para DXF antes da execução (limitação do `ezdxf`).
 - IDs nodais no CAD e no Excel devem corresponder para o vínculo automático.
+- O pipeline também reconhece nós em DXF quando estiverem como rótulos de texto (`N1`, `N2`, ...), mesmo sem entidades `POINT`.
+- Planilhas Excel com cabeçalho nodal em linhas internas (não na primeira linha) são detectadas automaticamente quando contêm coluna de nó.
