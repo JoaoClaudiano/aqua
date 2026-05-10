@@ -1,4 +1,5 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 
 <h2 class="sr-only">Dashboard com 6 painéis: localização, planta da rede, áreas de influência, população nodal, vazão nodal e comparação de vazões</h2>
 
@@ -36,8 +37,7 @@ body{font-family:var(--font-sans)}
 .panel.active{display:block}
 
 .map-container{position:relative;width:100%;height:340px;border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-tertiary);background:#e8f0e4}
-.map-container canvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:grab}
-.map-container canvas:active{cursor:grabbing}
+.map-surface{position:absolute;inset:0}
 
 .map-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary)}
 .leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)}
@@ -45,11 +45,15 @@ body{font-family:var(--font-sans)}
 .leg-circ{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .leg-line{width:20px;height:2px;flex-shrink:0}
 
-.map-toolbar{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:10}
+.map-toolbar{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:500}
 .map-btn{width:28px;height:28px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--color-text-primary)}
 .map-btn:hover{background:var(--color-background-secondary)}
+.map-container .leaflet-control-zoom{display:none}
+.map-container .leaflet-control-layers{border:0.5px solid var(--color-border-secondary);box-shadow:none;border-radius:var(--border-radius-md)}
+.map-container .leaflet-control-layers-toggle{width:30px;height:30px}
+.map-container .leaflet-control-scale-line{border-color:var(--color-border-secondary);background:rgba(255,255,255,.92);color:var(--color-text-secondary)}
 
-.north-arrow{position:absolute;top:10px;left:10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 8px;font-size:10px;font-weight:500;color:var(--color-text-primary);display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.north-arrow{position:absolute;top:10px;left:10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 8px;font-size:10px;font-weight:500;color:var(--color-text-primary);display:flex;flex-direction:column;align-items:center;line-height:1.2;z-index:500}
 
 .metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
@@ -66,19 +70,20 @@ body{font-family:var(--font-sans)}
 .info-row .ik{color:var(--color-text-secondary)}
 .info-row .iv{font-weight:500;color:var(--color-text-primary)}
 
-.obs-item{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--color-text-secondary);margin-bottom:7px}
-.obs-item i{color:#1D9E75;font-size:14px;flex-shrink:0;margin-top:1px}
-
 .upload-strip{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
 .up-btn{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:12px;font-weight:500;color:var(--color-text-primary);cursor:pointer}
 .up-btn:hover{background:var(--color-background-secondary)}
 .up-btn .dot{width:7px;height:7px;border-radius:50%}
 input[type=file]{display:none}
 
-.status{padding:9px 18px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:7px}
+.status{padding:9px 18px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .s-dot{width:5px;height:5px;border-radius:50%;background:#1D9E75}
 
-.scale-bar{position:absolute;bottom:10px;left:10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:4px;padding:5px 8px;font-size:10px;color:var(--color-text-secondary)}
+.scale-bar{display:none}
+.node-label span{display:inline-block;padding:1px 4px;border-radius:999px;background:rgba(255,255,255,.92);border:0.5px solid var(--color-border-secondary);font-size:10px;font-weight:600;color:var(--color-text-primary)}
+.issue-list{display:flex;flex-direction:column;gap:6px;list-style:none}
+.issue-list li{font-size:12px;color:var(--color-text-secondary);display:flex;gap:6px;align-items:flex-start}
+.issue-list li i{color:#185FA5;font-size:14px;flex-shrink:0;margin-top:1px}
 
 .legend-colors-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
 .lc-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)}
@@ -106,23 +111,21 @@ input[type=file]{display:none}
     <div class="tab" data-tab="5"><i class="ti ti-chart-bar" aria-hidden="true"></i>6. Comparação</div>
   </div>
 
-  <!-- PANEL 1: Localização -->
   <div class="panel active" id="panel0">
     <div class="metrics-row">
       <div class="metric"><div class="lbl">Município</div><div class="val" style="font-size:15px">Solonópole</div><div class="sub">Ceará, Brasil</div></div>
-      <div class="metric"><div class="lbl">Área da polígonal</div><div class="val" id="p1area">103,51</div><div class="sub">hectares</div></div>
-      <div class="metric"><div class="lbl">População atual</div><div class="val" id="p1pop0">11.240</div><div class="sub">habitantes</div></div>
+      <div class="metric"><div class="lbl">Área da polígonal</div><div class="val" id="p1area">—</div><div class="sub">hectares</div></div>
+      <div class="metric"><div class="lbl">População atual</div><div class="val" id="p1pop0">—</div><div class="sub">habitantes</div></div>
       <div class="metric"><div class="lbl">Horizonte do projeto</div><div class="val">2046</div><div class="sub">20 anos</div></div>
     </div>
     <div class="map-container" id="mapLoc">
-      <canvas id="cLoc"></canvas>
+      <div class="map-surface" id="mLoc" role="img" aria-label="Mapa de localização com base cartográfica"></div>
       <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
       <div class="map-toolbar">
-        <button class="map-btn" onclick="zoom('cLoc',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="zoom('cLoc',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="resetView('cLoc')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mLoc',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mLoc',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('mLoc')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
       </div>
-      <div class="scale-bar">0 — 250 — 500 m</div>
     </div>
     <div class="map-legend">
       <span class="leg-item"><span class="leg-line" style="background:#d44;height:2px;border-top:2px dashed #d44"></span> Limite municipal</span>
@@ -131,50 +134,46 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <!-- PANEL 2: Planta da Rede -->
   <div class="panel" id="panel1">
     <div class="metrics-row">
-      <div class="metric"><div class="lbl">Nós de consumo</div><div class="val" id="p2nodes">20</div><div class="sub">pontos de demanda</div></div>
-      <div class="metric"><div class="lbl">RAP</div><div class="val">1</div><div class="sub">reservatório apoiado</div></div>
-      <div class="metric"><div class="lbl">Trechos</div><div class="val" id="p2pipes">28</div><div class="sub">segmentos de rede</div></div>
+      <div class="metric"><div class="lbl">Nós de consumo</div><div class="val" id="p2nodes">—</div><div class="sub">pontos de demanda</div></div>
+      <div class="metric"><div class="lbl">RAP</div><div class="val" id="p2rap">—</div><div class="sub">reservatório apoiado</div></div>
+      <div class="metric"><div class="lbl">Trechos</div><div class="val" id="p2pipes">—</div><div class="sub">segmentos de rede</div></div>
       <div class="metric"><div class="lbl">Extensão total</div><div class="val" id="p2ext">—</div><div class="sub">metros</div></div>
     </div>
     <div class="map-container" id="mapRede">
-      <canvas id="cRede"></canvas>
+      <div class="map-surface" id="mRede" role="img" aria-label="Mapa da rede de abastecimento sobre base cartográfica"></div>
       <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
       <div class="map-toolbar">
-        <button class="map-btn" onclick="zoom('cRede',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="zoom('cRede',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="resetView('cRede')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mRede',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mRede',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('mRede')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
       </div>
-      <div class="scale-bar">0 — 125 — 500 m</div>
     </div>
     <div class="map-legend">
       <span class="leg-item"><span class="leg-sq" style="background:#D85A30;border-radius:2px"></span> RAP</span>
       <span class="leg-item"><span class="leg-circ" style="background:#185FA5"></span> Nós</span>
       <span class="leg-item"><span class="leg-line" style="background:#378ADD"></span> Rede de distribuição</span>
       <span class="leg-item"><span class="leg-line" style="background:#bbb"></span> Arruamento</span>
-      <span class="leg-item"><span class="leg-line" style="background:#e8a;border-top:1px dashed #e8a"></span> Curvas de nível (5m)</span>
+      <span class="leg-item"><span class="leg-line" style="background:#e8a;border-top:1px dashed #e8a"></span> Curvas de nível / quadras</span>
     </div>
   </div>
 
-  <!-- PANEL 3: Áreas de Influência -->
   <div class="panel" id="panel2">
     <div class="metrics-row">
-      <div class="metric"><div class="lbl">Área total</div><div class="val" id="p3area">103,5</div><div class="sub">ha</div></div>
+      <div class="metric"><div class="lbl">Área total</div><div class="val" id="p3area">—</div><div class="sub">ha</div></div>
       <div class="metric"><div class="lbl">Maior área nodal</div><div class="val" id="p3max">—</div><div class="sub">ha</div></div>
       <div class="metric"><div class="lbl">Menor área nodal</div><div class="val" id="p3min">—</div><div class="sub">ha</div></div>
       <div class="metric"><div class="lbl">Método</div><div class="val" style="font-size:13px">Área Nodal</div><div class="sub">Thiessen / Voronoi</div></div>
     </div>
     <div class="map-container" id="mapArea">
-      <canvas id="cArea"></canvas>
+      <div class="map-surface" id="mArea" role="img" aria-label="Mapa das áreas de influência sobre base cartográfica"></div>
       <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
       <div class="map-toolbar">
-        <button class="map-btn" onclick="zoom('cArea',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="zoom('cArea',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="resetView('cArea')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mArea',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mArea',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('mArea')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
       </div>
-      <div class="scale-bar">0 — 125 — 500 m</div>
     </div>
     <div class="map-legend" id="areaLegend">
       <span class="leg-item"><span class="leg-sq" style="background:#D85A30"></span> RAP</span>
@@ -183,33 +182,30 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <!-- PANEL 4: Pop. Nodal -->
   <div class="panel" id="panel3">
     <div class="metrics-row">
       <div class="metric"><div class="lbl">Pop. total atual</div><div class="val" id="p4pop0">—</div><div class="sub">habitantes</div></div>
-      <div class="metric"><div class="lbl">Pop. projeto (2046)</div><div class="val" id="p4popProj">18.851</div><div class="sub">habitantes</div></div>
+      <div class="metric"><div class="lbl">Pop. projeto (2046)</div><div class="val" id="p4popProj">—</div><div class="sub">habitantes</div></div>
       <div class="metric"><div class="lbl">Crescimento</div><div class="val" id="p4growth">1,5%</div><div class="sub">ao ano</div></div>
       <div class="metric"><div class="lbl">Nó maior pop.</div><div class="val" id="p4maxNode">—</div><div class="sub">hab. (projeto)</div></div>
     </div>
     <div class="map-container" id="mapPop">
-      <canvas id="cPop"></canvas>
+      <div class="map-surface" id="mPop" role="img" aria-label="Mapa de população nodal sobre base cartográfica"></div>
       <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
       <div class="map-toolbar">
-        <button class="map-btn" onclick="zoom('cPop',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="zoom('cPop',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="resetView('cPop')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mPop',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mPop',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('mPop')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
       </div>
-      <div class="scale-bar">0 — 125 — 500 m</div>
     </div>
     <div class="map-legend">
       <span class="leg-item"><span class="leg-sq" style="background:#D85A30"></span> RAP</span>
-      <span class="leg-item"><span class="leg-circ" style="background:#083d6e"></span> Alta pop. (>1000 hab)</span>
+      <span class="leg-item"><span class="leg-circ" style="background:#083d6e"></span> Alta pop. (>70%)</span>
       <span class="leg-item"><span class="leg-circ" style="background:#378ADD"></span> Média pop.</span>
-      <span class="leg-item"><span class="leg-circ" style="background:#B5D4F4"></span> Baixa pop. (&lt;400 hab)</span>
+      <span class="leg-item"><span class="leg-circ" style="background:#B5D4F4"></span> Baixa pop.</span>
     </div>
   </div>
 
-  <!-- PANEL 5: Vazão Nodal -->
   <div class="panel" id="panel4">
     <div class="metrics-row">
       <div class="metric"><div class="lbl">Vazão total (Linear)</div><div class="val" id="p5qlin">—</div><div class="sub">L/s</div></div>
@@ -218,24 +214,22 @@ input[type=file]{display:none}
       <div class="metric"><div class="lbl">K₁ × K₂</div><div class="val" id="p5kk">1,80</div><div class="sub">coeficientes</div></div>
     </div>
     <div class="map-container" id="mapVaz">
-      <canvas id="cVaz"></canvas>
+      <div class="map-surface" id="mVaz" role="img" aria-label="Mapa de vazão nodal sobre base cartográfica"></div>
       <div class="north-arrow"><i class="ti ti-arrow-up" style="font-size:14px" aria-hidden="true"></i>N</div>
       <div class="map-toolbar">
-        <button class="map-btn" onclick="zoom('cVaz',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="zoom('cVaz',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
-        <button class="map-btn" onclick="resetView('cVaz')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mVaz',1.2)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="zoom('mVaz',0.8)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+        <button class="map-btn" onclick="resetView('mVaz')"><i class="ti ti-maximize" aria-hidden="true"></i></button>
       </div>
-      <div class="scale-bar">0 — 125 — 500 m</div>
     </div>
     <div class="map-legend">
       <span class="leg-item"><span class="leg-sq" style="background:#D85A30"></span> RAP</span>
-      <span class="leg-item"><span class="leg-sq" style="background:#7B2A0A;border-radius:50%"></span> Alta vazão (>2 L/s)</span>
+      <span class="leg-item"><span class="leg-sq" style="background:#7B2A0A;border-radius:50%"></span> Alta vazão</span>
       <span class="leg-item"><span class="leg-sq" style="background:#D85A30;border-radius:50%"></span> Média vazão</span>
       <span class="leg-item"><span class="leg-sq" style="background:#F5C4B3;border-radius:50%"></span> Baixa vazão</span>
     </div>
   </div>
 
-  <!-- PANEL 6: Comparação -->
   <div class="panel" id="panel5">
     <div class="panel6-layout">
       <div>
@@ -251,10 +245,18 @@ input[type=file]{display:none}
           <div class="info-row"><span class="ik">Diferença</span><span class="iv" id="c6diff">—</span></div>
         </div>
         <div class="info-box">
-          <div class="ib-title">Principais observações</div>
-          <div class="obs-item"><i class="ti ti-check" aria-hidden="true"></i><span>Resultados globais muito próximos</span></div>
-          <div class="obs-item"><i class="ti ti-check" aria-hidden="true"></i><span>Diferenças locais devidas à geometria</span></div>
-          <div class="obs-item"><i class="ti ti-check" aria-hidden="true"></i><span>Método linear mais estável para redes irregulares</span></div>
+          <div class="ib-title">Reconciliação de dados</div>
+          <div class="info-row"><span class="ik">Planilha</span><span class="iv" id="dqExcel">—</span></div>
+          <div class="info-row"><span class="ik">DXF</span><span class="iv" id="dqDxf">—</span></div>
+          <div class="info-row"><span class="ik">Vinculados</span><span class="iv" id="dqLinked">—</span></div>
+          <div class="info-row"><span class="ik">Não casados</span><span class="iv" id="dqUnmatched">—</span></div>
+          <div class="info-row"><span class="ik">Sem geometria</span><span class="iv" id="dqMissingGeom">—</span></div>
+        </div>
+        <div class="info-box">
+          <div class="ib-title">Inconsistências detectadas</div>
+          <ul class="issue-list" id="issueList">
+            <li><i class="ti ti-info-circle" aria-hidden="true"></i><span>Carregue a planilha e o DXF para gerar o diagnóstico.</span></li>
+          </ul>
         </div>
         <div class="info-box">
           <div class="ib-title">Parâmetros utilizados</div>
@@ -281,8 +283,14 @@ input[type=file]{display:none}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6.0.4/dist/d3-delaunay.min.js"></script>
 <script>
-const DEMO = [
+const CONFIG={q:150,k1:1.2,k2:1.5,loss:0.3,growth:0.015,horizon:20,sourceCrs:'EPSG:31984'};
+const MAP_IDS=['mLoc','mRede','mArea','mPop','mVaz'];
+const SOLONOPOLE_CENTER=[-5.7347,-39.0083];
+const DEMO=[
   {id:'RAP',x:220,y:55,pop0:0,areaInf:0,isRAP:true,conn:['N1','N2','N7']},
   {id:'N1',x:155,y:125,pop0:580,areaInf:48200,conn:['N2','N4']},
   {id:'N2',x:260,y:135,pop0:720,areaInf:55000,conn:['N3','N5']},
@@ -305,396 +313,829 @@ const DEMO = [
   {id:'N19',x:415,y:315,pop0:620,areaInf:50000,conn:['N20']},
   {id:'N20',x:360,y:440,pop0:500,areaInf:42000,conn:[]},
 ];
-
 const AREA_COLORS=['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f','#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00'];
+const COLUMN_ALIASES={
+  id:['no','nó','nodo','node','node id','node_id','id','id no','id nó'],
+  x:['x','coord x','coordenada x','utm x','east','easting'],
+  y:['y','coord y','coordenada y','utm y','north','northing'],
+  pop0:['pop atual','população atual','populacao atual','pop0','pop atual (hab)','populacao','população'],
+  popProj:['pop projeto','população de projeto','populacao de projeto','pop do nó (hab)','pop do no (hab)','pop projeto (hab)'],
+  areaInf:['area nodal (m²)','area nodal (m2)','área nodal (m²)','área nodal (m2)','area nodal','área nodal','area_inf','areainf','area'],
+  qNodal:['vazão nodal qmh (l/s)','vazao nodal qmh (l/s)','qmh área nodal (l/s)','qmh area nodal (l/s)','q nodal','qn'],
+  qLinear:['vazão linear qmh (l/s)','vazao linear qmh (l/s)','qmh linear (l/s)','q linear','ql'],
+  conn:['conn','conexoes','conexões','ligações','ligacoes']
+};
+const PROJECT_META_ALIASES={
+  projectPopulation:['populacao de projeto p (hab)','população de projeto p (hab)'],
+  projectArea:['area total do projeto (m²)','área total do projeto (m²)','area total do projeto (m2)','área total do projeto (m2)'],
+  networkLength:['comprimento total da rede (m)']
+};
+let nodes=[];
+let flowChartInst=null;
+let projectMeta={};
+let diagnostics=createDiagnostics();
+let currentImports={excel:null,dxf:null,source:'demo'};
+const mapRegistry={};
 
-let nodes=[], flowChartInst=null;
-const scales={}, offsets={};
+proj4.defs('EPSG:31984','+proj=utm +zone=24 +south +datum=SIRGAS2000 +units=m +no_defs');
 
-function initView(id){scales[id]=1;offsets[id]={x:0,y:0};}
-function zoom(id,f){scales[id]=(scales[id]||1)*f;redrawAll();}
-function resetView(id){scales[id]=1;offsets[id]={x:0,y:0};redrawAll();}
-
-function project(nodes,W,H,id){
-  const sc=scales[id]||1, off=offsets[id]||{x:0,y:0};
-  const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
-  const mnX=Math.min(...xs),mxX=Math.max(...xs),mnY=Math.min(...ys),mxY=Math.max(...ys);
-  const pad=45;
-  const bsc=Math.min((W-pad*2)/(mxX-mnX||1),(H-pad*2)/(mxY-mnY||1));
-  return n=>({
-    px:(n.x-mnX)*bsc*sc+pad+off.x,
-    py:(n.y-mnY)*bsc*sc+pad+off.y
-  });
+function createDiagnostics(){
+  return {
+    excelNodeCount:0,
+    dxfNodeCount:0,
+    linkedNodeCount:0,
+    excelOnlyCount:0,
+    dxfOnlyCount:0,
+    missingGeometryCount:0,
+    duplicateExcelIds:[],
+    duplicateDxfIds:[],
+    unmatchedExcelIds:[],
+    unmatchedDxfIds:[],
+    invalidExcelRows:[],
+    totalNetworkLength:0,
+    totalSegments:0,
+    rapCount:0,
+    notes:['Carregue a planilha e o DXF para gerar o diagnóstico.']
+  };
 }
 
-function setupDrag(canvasId){
-  const c=document.getElementById(canvasId);
-  if(!c||c._drag)return;
-  c._drag=true;
-  let drag=false,lx=0,ly=0;
-  c.addEventListener('mousedown',e=>{drag=true;lx=e.offsetX;ly=e.offsetY;});
-  c.addEventListener('mousemove',e=>{
-    if(!drag)return;
-    offsets[canvasId]=offsets[canvasId]||{x:0,y:0};
-    offsets[canvasId].x+=e.offsetX-lx;
-    offsets[canvasId].y+=e.offsetY-ly;
-    lx=e.offsetX;ly=e.offsetY;
-    redrawAll();
-  });
-  c.addEventListener('mouseup',()=>drag=false);
-  c.addEventListener('mouseleave',()=>drag=false);
-  c.addEventListener('wheel',e=>{
-    e.preventDefault();
-    scales[canvasId]=(scales[canvasId]||1)*(e.deltaY<0?1.12:0.88);
-    redrawAll();
-  },{passive:false});
+function normalizeText(value){
+  return String(value ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ')
+    .trim()
+    .toLowerCase();
 }
 
-function prepCanvas(id){
-  const c=document.getElementById(id);
-  if(!c)return null;
-  const cont=c.parentElement;
-  c.width=cont.offsetWidth*(window.devicePixelRatio||1);
-  c.height=cont.offsetHeight*(window.devicePixelRatio||1);
-  const ctx=c.getContext('2d');
-  ctx.scale(window.devicePixelRatio||1,window.devicePixelRatio||1);
-  return {c,ctx,W:cont.offsetWidth,H:cont.offsetHeight};
+function normalizeNodeId(value){
+  const raw=String(value ?? '').trim();
+  if(!raw) return '';
+  const compact=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(/^RAP\d*$/.test(compact)) return compact;
+  const nodeMatch=compact.match(/^N(\d+)$/);
+  if(nodeMatch) return `N${parseInt(nodeMatch[1],10)}`;
+  const namedMatch=compact.match(/^NODE(\d+)$/);
+  if(namedMatch) return `N${parseInt(namedMatch[1],10)}`;
+  return compact;
 }
 
-function drawStreetGrid(ctx,W,H){
-  ctx.save();
-  ctx.strokeStyle='rgba(180,170,155,0.35)';
-  ctx.lineWidth=0.8;
-  for(let x=30;x<W;x+=38){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+(Math.random()-0.5)*8,H);ctx.stroke();}
-  for(let y=30;y<H;y+=35){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+(Math.random()-0.5)*6);ctx.stroke();}
-  ctx.restore();
+function isNodeLikeId(value){
+  return /^N\d+$/.test(value) || /^RAP\d*$/.test(value);
 }
 
-function drawContours(ctx,W,H){
-  ctx.save();
-  ctx.strokeStyle='rgba(210,180,120,0.25)';
-  ctx.lineWidth=0.7;
-  ctx.setLineDash([4,4]);
-  for(let i=0;i<5;i++){
-    ctx.beginPath();
-    const cy=H*0.15+i*(H*0.14);
-    ctx.ellipse(W/2+(i%2)*20,cy,W*0.35+i*18,H*0.06,0.1,0,Math.PI*2);
-    ctx.stroke();
+function toNumber(value){
+  if(value===null || value===undefined || value==='') return null;
+  if(typeof value==='number') return Number.isFinite(value)?value:null;
+  const cleaned=String(value).trim().replace(/\s+/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.');
+  const number=Number(cleaned);
+  return Number.isFinite(number)?number:null;
+}
+
+function toLatLng(x,y){
+  if(!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  try{
+    const [lng,lat]=proj4(CONFIG.sourceCrs,'EPSG:4326',[x,y]);
+    if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return [lat,lng];
+  }catch(_error){
+    return null;
   }
-  ctx.setLineDash([]);
-  ctx.restore();
 }
 
-function drawMapBg(ctx,W,H){
-  ctx.fillStyle='#edf2e8';
-  ctx.fillRect(0,0,W,H);
-  drawContours(ctx,W,H);
-  drawStreetGrid(ctx,W,H);
+function formatNumber(value,digits=0){
+  if(!Number.isFinite(value)) return '—';
+  return value.toLocaleString('pt-BR',{minimumFractionDigits:digits,maximumFractionDigits:digits});
 }
 
-function drawConnections(ctx,nodes,proj,color,width){
-  const map={};nodes.forEach(n=>map[n.id]=n);
-  ctx.strokeStyle=color;ctx.lineWidth=width;
-  nodes.forEach(n=>{
-    (n.conn||[]).forEach(cId=>{
-      const c=map[cId];if(!c)return;
-      const a=proj(n),b=proj(c);
-      ctx.beginPath();ctx.moveTo(a.px,a.py);ctx.lineTo(b.px,b.py);ctx.stroke();
+function uniquePush(list,value){
+  if(value && !list.includes(value)) list.push(value);
+}
+
+function detectHeaderRow(rows){
+  const limit=Math.min(rows.length,60);
+  let best={index:-1,score:0};
+  for(let index=0;index<limit;index++){
+    const normalized=(rows[index]||[]).map(normalizeText);
+    if(!normalized.some(Boolean)) continue;
+    let score=0;
+    if(normalized.some(cell=>COLUMN_ALIASES.id.includes(cell))) score+=4;
+    if(normalized.some(cell=>COLUMN_ALIASES.areaInf.includes(cell))) score+=2;
+    if(normalized.some(cell=>COLUMN_ALIASES.qNodal.includes(cell) || COLUMN_ALIASES.qLinear.includes(cell))) score+=2;
+    if(normalized.some(cell=>COLUMN_ALIASES.x.includes(cell))) score+=1;
+    if(normalized.some(cell=>COLUMN_ALIASES.y.includes(cell))) score+=1;
+    if(score>best.score) best={index,score};
+  }
+  return best.score>=4?best.index:-1;
+}
+
+function buildHeaders(row){
+  const seen={};
+  return (row||[]).map((value,index)=>{
+    let header=String(value ?? '').trim();
+    if(!header || normalizeText(header).startsWith('unnamed')) header=`col_${index}`;
+    const normalized=normalizeText(header) || `col_${index}`;
+    seen[normalized]=(seen[normalized]||0)+1;
+    return seen[normalized]===1?header:`${header}_${seen[normalized]}`;
+  });
+}
+
+function resolveField(columns,key){
+  const match=Object.entries(columns).find(([normalized])=>COLUMN_ALIASES[key].includes(normalized));
+  return match?match[1]:null;
+}
+
+function mergeNodeRecord(target,patch){
+  const merged={...target};
+  Object.entries(patch).forEach(([key,value])=>{
+    if(value===null || value===undefined || value==='') return;
+    if(Array.isArray(value)) merged[key]=Array.from(new Set([...(merged[key]||[]),...value]));
+    else merged[key]=value;
+  });
+  return merged;
+}
+
+function extractProjectMeta(rows){
+  const meta={};
+  rows.slice(0,30).forEach(row=>{
+    const label=normalizeText(row[0]);
+    const value=toNumber(row[1]);
+    if(!label || value===null) return;
+    Object.entries(PROJECT_META_ALIASES).forEach(([key,aliases])=>{
+      if(aliases.includes(label)) meta[key]=value;
     });
   });
+  return meta;
 }
 
-// Panel 1: Localização
-function drawLoc(){
-  const r=prepCanvas('cLoc');if(!r)return;
-  const{ctx,W,H}=r;
-  ctx.fillStyle='#d4e8f0';ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#c8d4b8';
-  ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.38,H*0.42,0.1,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#d4c8a0';
-  ctx.beginPath();ctx.ellipse(W/2+20,H/2+10,W*0.3,H*0.32,0.05,0,Math.PI*2);ctx.fill();
-  drawStreetGrid(ctx,W,H);
-  ctx.strokeStyle='#e44';ctx.lineWidth=2;ctx.setLineDash([8,5]);
-  ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.32,H*0.36,0.1,0,Math.PI*2);ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.strokeStyle='#2a8';ctx.lineWidth=2;
-  ctx.beginPath();ctx.ellipse(W/2+5,H/2+5,W*0.22,H*0.26,0.05,0,Math.PI*2);ctx.stroke();
-  ctx.fillStyle='#185FA5';ctx.beginPath();ctx.arc(W/2+5,H/2+5,5,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
-  ctx.fillText('Solonópole',W/2+5,H/2-8);
-  ctx.font='10px sans-serif';ctx.fillStyle='var(--color-text-secondary,#666)';
-  ctx.fillText('Ceará — Brasil',W/2+5,H/2+5);
-  ctx.fillStyle='rgba(24,95,165,0.1)';
-  ctx.beginPath();ctx.ellipse(W/2+5,H/2+5,W*0.22,H*0.26,0.05,0,Math.PI*2);ctx.fill();
-}
-
-// Panel 2: Planta da Rede
-function drawRede(){
-  const r=prepCanvas('cRede');if(!r||!nodes.length)return;
-  const{ctx,W,H}=r;
-  drawMapBg(ctx,W,H);
-  const proj=project(nodes,W,H,'cRede');
-  drawConnections(ctx,nodes,proj,'rgba(55,138,221,0.8)',1.8);
-  nodes.forEach(n=>{
-    const{px,py}=proj(n);
-    if(n.isRAP){
-      ctx.fillStyle='#D85A30';
-      ctx.fillRect(px-8,py-8,16,16);
-      ctx.fillStyle='#fff';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('R',px,py);
-    }else{
-      ctx.fillStyle='#185FA5';ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='rgba(24,95,165,0.15)';ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);ctx.fill();
+function parseWorkbookData(workbook){
+  const dataById=new Map();
+  const duplicateIds=[];
+  const invalidRows=[];
+  const matchedSheets=[];
+  const meta={};
+  workbook.SheetNames.forEach(sheetName=>{
+    const rows=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{header:1,raw:true,defval:null,blankrows:false});
+    Object.assign(meta,extractProjectMeta(rows));
+    const headerIndex=detectHeaderRow(rows);
+    if(headerIndex<0) return;
+    const headers=buildHeaders(rows[headerIndex]);
+    const normalizedToOriginal={};
+    headers.forEach(header=>{normalizedToOriginal[normalizeText(header)]=header;});
+    const idCol=resolveField(normalizedToOriginal,'id');
+    if(!idCol) return;
+    matchedSheets.push(sheetName);
+    const xCol=resolveField(normalizedToOriginal,'x');
+    const yCol=resolveField(normalizedToOriginal,'y');
+    const pop0Col=resolveField(normalizedToOriginal,'pop0');
+    const popProjCol=resolveField(normalizedToOriginal,'popProj');
+    const areaInfCol=resolveField(normalizedToOriginal,'areaInf');
+    const qNodalCol=resolveField(normalizedToOriginal,'qNodal');
+    const qLinearCol=resolveField(normalizedToOriginal,'qLinear');
+    const connCol=resolveField(normalizedToOriginal,'conn');
+    for(let rowIndex=headerIndex+1;rowIndex<rows.length;rowIndex++){
+      const row=rows[rowIndex]||[];
+      if(!row.some(cell=>String(cell ?? '').trim())) continue;
+      const record={};
+      headers.forEach((header,index)=>{record[header]=row[index] ?? null;});
+      const rawId=record[idCol];
+      const id=normalizeNodeId(rawId);
+      if(!isNodeLikeId(id)){
+        if(String(rawId ?? '').trim()) invalidRows.push(`${sheetName}: linha ${rowIndex+1} com ID inválido (${rawId})`);
+        continue;
+      }
+      const patch={
+        id,
+        rawId:String(rawId ?? '').trim(),
+        x:xCol?toNumber(record[xCol]):null,
+        y:yCol?toNumber(record[yCol]):null,
+        pop0:pop0Col?toNumber(record[pop0Col]):null,
+        popProj:popProjCol?toNumber(record[popProjCol]):null,
+        areaInf:areaInfCol?toNumber(record[areaInfCol]):null,
+        qNodal:qNodalCol?toNumber(record[qNodalCol]):null,
+        qLinear:qLinearCol?toNumber(record[qLinearCol]):null,
+        isRAP:id.startsWith('RAP'),
+        sourceSheets:[sheetName]
+      };
+      if(connCol && record[connCol]) patch.conn=String(record[connCol]).split(/[;,]/).map(normalizeNodeId).filter(isNodeLikeId);
+      if(dataById.has(id)) uniquePush(duplicateIds,id);
+      dataById.set(id,mergeNodeRecord(dataById.get(id)||{},patch));
     }
-    ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
-    ctx.fillText(n.id,px,py+7);
+  });
+  return {records:[...dataById.values()],duplicateIds,invalidRows,matchedSheets,projectMeta:meta};
+}
+
+function groupsToEntities(text){
+  const lines=text.split(/\r?\n/);
+  const pairs=[];
+  for(let index=0;index<lines.length-1;index+=2){
+    const code=Number.parseInt(String(lines[index]).trim(),10);
+    if(Number.isNaN(code)) continue;
+    pairs.push({code,value:lines[index+1] ?? ''});
+  }
+  let section='';
+  const entities=[];
+  let current=null;
+  for(let index=0;index<pairs.length;index++){
+    const pair=pairs[index];
+    const upperValue=String(pair.value).trim().toUpperCase();
+    if(pair.code===0 && upperValue==='SECTION'){
+      section=String((pairs[index+1]||{}).value || '').trim().toUpperCase();
+      current=null;
+      continue;
+    }
+    if(pair.code===0 && upperValue==='ENDSEC'){
+      if(current && section==='ENTITIES') entities.push(current);
+      current=null;
+      section='';
+      continue;
+    }
+    if(section!=='ENTITIES') continue;
+    if(pair.code===0){
+      if(current) entities.push(current);
+      current={type:upperValue,groups:[]};
+    }else if(current){
+      current.groups.push(pair);
+    }
+  }
+  if(current && section==='ENTITIES') entities.push(current);
+  return entities;
+}
+
+function getFirst(entity,code){
+  const group=entity.groups.find(item=>item.code===code);
+  return group?group.value:null;
+}
+
+function collectPairs(entity,xCode,yCode){
+  const coords=[];
+  let pendingX=null;
+  entity.groups.forEach(group=>{
+    if(group.code===xCode) pendingX=toNumber(group.value);
+    if(group.code===yCode && pendingX!==null){
+      const y=toNumber(group.value);
+      if(pendingX!==null && y!==null) coords.push([pendingX,y]);
+      pendingX=null;
+    }
+  });
+  return coords;
+}
+
+function extractTextValue(entity){
+  return entity.groups
+    .filter(group=>group.code===1 || group.code===3)
+    .map(group=>String(group.value || ''))
+    .join('')
+    .replace(/\\P/g,' ')
+    .trim();
+}
+
+function parseDxf(text){
+  const entities=groupsToEntities(text);
+  const nodeMap=new Map();
+  const duplicateIds=[];
+  const segments=[];
+  let pendingPolyline=null;
+  entities.forEach(entity=>{
+    if(entity.type==='POLYLINE'){
+      pendingPolyline={points:[]};
+      return;
+    }
+    if(entity.type==='VERTEX' && pendingPolyline){
+      const x=toNumber(getFirst(entity,10));
+      const y=toNumber(getFirst(entity,20));
+      if(x!==null && y!==null) pendingPolyline.points.push([x,y]);
+      return;
+    }
+    if(entity.type==='SEQEND' && pendingPolyline){
+      for(let index=1;index<pendingPolyline.points.length;index++) segments.push([pendingPolyline.points[index-1],pendingPolyline.points[index]]);
+      pendingPolyline=null;
+      return;
+    }
+    if(entity.type==='LINE'){
+      const x1=toNumber(getFirst(entity,10));
+      const y1=toNumber(getFirst(entity,20));
+      const x2=toNumber(getFirst(entity,11));
+      const y2=toNumber(getFirst(entity,21));
+      if([x1,y1,x2,y2].every(Number.isFinite)) segments.push([[x1,y1],[x2,y2]]);
+      return;
+    }
+    if(entity.type==='LWPOLYLINE'){
+      const points=collectPairs(entity,10,20);
+      for(let index=1;index<points.length;index++) segments.push([points[index-1],points[index]]);
+      return;
+    }
+    if(entity.type==='TEXT' || entity.type==='MTEXT' || entity.type==='INSERT' || entity.type==='POINT'){
+      let id='';
+      let x=null;
+      let y=null;
+      if(entity.type==='TEXT' || entity.type==='MTEXT'){
+        id=normalizeNodeId(extractTextValue(entity));
+        x=toNumber(getFirst(entity,10));
+        y=toNumber(getFirst(entity,20));
+        if(!isNodeLikeId(id)) return;
+      }else if(entity.type==='INSERT'){
+        id=normalizeNodeId(getFirst(entity,2));
+        x=toNumber(getFirst(entity,10));
+        y=toNumber(getFirst(entity,20));
+        if(!isNodeLikeId(id)) return;
+      }else if(entity.type==='POINT'){
+        x=toNumber(getFirst(entity,10));
+        y=toNumber(getFirst(entity,20));
+        const handle=String(getFirst(entity,5) || '').trim();
+        id=handle?`POINT_${handle}`:'';
+      }
+      if(!id || x===null || y===null) return;
+      const patch={id,x,y,isRAP:id.startsWith('RAP')};
+      if(nodeMap.has(id)) uniquePush(duplicateIds,id);
+      nodeMap.set(id,mergeNodeRecord(nodeMap.get(id)||{},patch));
+    }
+  });
+  return {nodes:[...nodeMap.values()],segments,duplicateIds};
+}
+
+function findNearestNode(list,coord,tolerance){
+  let best=null;
+  let bestDistance=Infinity;
+  list.forEach(node=>{
+    const candidate=Math.hypot(node.x-coord[0],node.y-coord[1]);
+    if(candidate<bestDistance){
+      best=node;
+      bestDistance=candidate;
+    }
+  });
+  return bestDistance<=tolerance?best:null;
+}
+
+function inferConnections(records,segments){
+  const validNodes=records.filter(node=>Number.isFinite(node.x) && Number.isFinite(node.y));
+  const lookup=new Map(validNodes.map(node=>[node.id,{...node,conn:[...(node.conn||[])]}]));
+  let totalLength=0;
+  if(validNodes.length<2 || !segments.length) return {records,totalLength,totalSegments:0};
+  const xs=validNodes.map(node=>node.x);
+  const ys=validNodes.map(node=>node.y);
+  const diagonal=Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys));
+  const tolerance=Math.max(1,Math.min(diagonal*0.003,25));
+  segments.forEach(segment=>{
+    const [start,end]=segment;
+    totalLength+=Math.hypot(end[0]-start[0],end[1]-start[1]);
+    const startNode=findNearestNode(validNodes,start,tolerance);
+    const endNode=findNearestNode(validNodes,end,tolerance);
+    if(!startNode || !endNode || startNode.id===endNode.id) return;
+    lookup.get(startNode.id).conn=Array.from(new Set([...(lookup.get(startNode.id).conn||[]),endNode.id]));
+    lookup.get(endNode.id).conn=Array.from(new Set([...(lookup.get(endNode.id).conn||[]),startNode.id]));
+  });
+  return {
+    records:[...lookup.values(),...records.filter(node=>!lookup.has(node.id))],
+    totalLength,
+    totalSegments:segments.length
+  };
+}
+
+function buildDiagnosticNotes(summary,matchedSheets){
+  const notes=[];
+  if(matchedSheets.length) notes.push(`Abas lidas automaticamente: ${matchedSheets.join(', ')}.`);
+  if(summary.missingGeometryCount) notes.push(`${summary.missingGeometryCount} nó(s) da planilha seguem sem geometria; carregue o DXF ou informe colunas X/Y.`);
+  if(summary.excelOnlyCount) notes.push(`Nós apenas na planilha: ${summary.unmatchedExcelIds.join(', ')}${summary.excelOnlyCount>summary.unmatchedExcelIds.length?'…':''}`);
+  if(summary.dxfOnlyCount) notes.push(`Nós apenas no DXF: ${summary.unmatchedDxfIds.join(', ')}${summary.dxfOnlyCount>summary.unmatchedDxfIds.length?'…':''}`);
+  if(summary.duplicateExcelIds.length) notes.push(`IDs duplicados na planilha: ${summary.duplicateExcelIds.join(', ')}.`);
+  if(summary.duplicateDxfIds.length) notes.push(`IDs duplicados no DXF: ${summary.duplicateDxfIds.join(', ')}.`);
+  if(summary.invalidExcelRows.length) notes.push(`Linhas ignoradas na planilha: ${summary.invalidExcelRows.join(' | ')}.`);
+  if(!notes.length) notes.push('Base reconciliada sem inconsistências críticas.');
+  return notes;
+}
+
+function buildDemoDataset(){
+  projectMeta={};
+  nodes=DEMO.map(node=>{
+    const x=499300+(node.x-220)*12;
+    const y=9367350-(node.y-250)*12;
+    return {
+      ...node,
+      x,
+      y,
+      latlng:toLatLng(x,y),
+      fromExcel:true,
+      fromDxf:true,
+      qLinear:null,
+      qNodal:null,
+      popProj:null
+    };
+  });
+  diagnostics={
+    excelNodeCount:nodes.filter(node=>!node.isRAP).length,
+    dxfNodeCount:nodes.length,
+    linkedNodeCount:nodes.length,
+    excelOnlyCount:0,
+    dxfOnlyCount:0,
+    missingGeometryCount:0,
+    duplicateExcelIds:[],
+    duplicateDxfIds:[],
+    unmatchedExcelIds:[],
+    unmatchedDxfIds:[],
+    invalidExcelRows:[],
+    totalNetworkLength:0,
+    totalSegments:0,
+    rapCount:1,
+    notes:['Modo demonstração carregado com base cartográfica real e dados sintéticos reconciliados.']
+  };
+}
+
+function buildMergedDataset(){
+  if(currentImports.source==='demo'){
+    buildDemoDataset();
+    return;
+  }
+  const mergedMap=new Map();
+  diagnostics=createDiagnostics();
+  projectMeta={...(currentImports.excel?.projectMeta||{})};
+  (currentImports.excel?.records||[]).forEach(record=>{
+    mergedMap.set(record.id,mergeNodeRecord(mergedMap.get(record.id)||{}, {...record,fromExcel:true,conn:record.conn||[]}));
+  });
+  (currentImports.dxf?.nodes||[]).forEach(record=>{
+    mergedMap.set(record.id,mergeNodeRecord(mergedMap.get(record.id)||{}, {...record,fromDxf:true,conn:record.conn||[]}));
+  });
+  let merged=[...mergedMap.values()].map(record=>({
+    id:record.id,
+    rawId:record.rawId||record.id,
+    x:Number.isFinite(record.x)?record.x:null,
+    y:Number.isFinite(record.y)?record.y:null,
+    pop0:Number.isFinite(record.pop0)?record.pop0:0,
+    popProj:Number.isFinite(record.popProj)?record.popProj:null,
+    areaInf:Number.isFinite(record.areaInf)?record.areaInf:0,
+    qNodal:Number.isFinite(record.qNodal)?record.qNodal:null,
+    qLinear:Number.isFinite(record.qLinear)?record.qLinear:null,
+    isRAP:Boolean(record.isRAP),
+    fromExcel:Boolean(record.fromExcel),
+    fromDxf:Boolean(record.fromDxf),
+    sourceSheets:record.sourceSheets||[],
+    conn:record.conn||[]
+  }));
+  const inferred=inferConnections(merged,currentImports.dxf?.segments||[]);
+  merged=inferred.records.map(node=>({
+    ...node,
+    latlng:toLatLng(node.x,node.y)
+  }));
+  diagnostics.excelNodeCount=currentImports.excel?.records?.length||0;
+  diagnostics.dxfNodeCount=(currentImports.dxf?.nodes||[]).filter(node=>isNodeLikeId(node.id)).length;
+  diagnostics.linkedNodeCount=merged.filter(node=>node.fromExcel && node.fromDxf).length;
+  diagnostics.excelOnlyCount=merged.filter(node=>node.fromExcel && !node.fromDxf).length;
+  diagnostics.dxfOnlyCount=merged.filter(node=>node.fromDxf && !node.fromExcel && !node.id.startsWith('POINT_')).length;
+  diagnostics.unmatchedExcelIds=merged.filter(node=>node.fromExcel && !node.fromDxf).map(node=>node.id).slice(0,12);
+  diagnostics.unmatchedDxfIds=merged.filter(node=>node.fromDxf && !node.fromExcel && !node.id.startsWith('POINT_')).map(node=>node.id).slice(0,12);
+  diagnostics.missingGeometryCount=merged.filter(node=>!node.isRAP && !node.latlng).length;
+  diagnostics.duplicateExcelIds=[...(currentImports.excel?.duplicateIds||[])];
+  diagnostics.duplicateDxfIds=[...(currentImports.dxf?.duplicateIds||[])];
+  diagnostics.invalidExcelRows=[...(currentImports.excel?.invalidRows||[])].slice(0,6);
+  diagnostics.totalNetworkLength=projectMeta.networkLength || inferred.totalLength;
+  diagnostics.totalSegments=inferred.totalSegments;
+  diagnostics.rapCount=merged.filter(node=>node.isRAP).length;
+  diagnostics.notes=buildDiagnosticNotes(diagnostics,currentImports.excel?.matchedSheets||[]);
+  nodes=merged;
+}
+
+function ensureDerivedMetrics(){
+  const growthFactor=Math.pow(1+CONFIG.growth,CONFIG.horizon);
+  const nonRAP=nodes.filter(node=>!node.isRAP);
+  const totalArea=nonRAP.reduce((sum,node)=>sum+(node.areaInf||0),0);
+  const totalPopProjFromSource=nonRAP.reduce((sum,node)=>sum+(Number.isFinite(node.popProj)?node.popProj:0),0);
+  const totalPopProj=totalPopProjFromSource>0?totalPopProjFromSource:nonRAP.reduce((sum,node)=>sum+Math.round((node.pop0||0)*growthFactor),0);
+  const qUnit=(CONFIG.q*CONFIG.k1*CONFIG.k2)/(86400*(1-CONFIG.loss));
+  nodes=nodes.map(node=>{
+    if(node.isRAP) return {...node,popProj:0,qLinear:0,qNodal:0};
+    const popProj=Number.isFinite(node.popProj)?node.popProj:Math.round((node.pop0||0)*growthFactor);
+    const qLinear=Number.isFinite(node.qLinear)?node.qLinear:popProj*qUnit;
+    const qNodal=Number.isFinite(node.qNodal)?node.qNodal:(totalArea>0?totalPopProj*qUnit*((node.areaInf||0)/totalArea):0);
+    return {...node,popProj,qLinear,qNodal};
   });
 }
 
-// Panel 3: Áreas de Influência
-function drawAreas(){
-  const r=prepCanvas('cArea');if(!r||!nodes.length)return;
-  const{ctx,W,H}=r;
-  drawMapBg(ctx,W,H);
-  const proj=project(nodes,W,H,'cArea');
-  const nonRAP=nodes.filter(n=>!n.isRAP);
-  nonRAP.forEach((n,i)=>{
-    const{px,py}=proj(n);
-    const rad=Math.sqrt(n.areaInf/Math.PI)*0.012*(scales['cArea']||1)*60;
-    ctx.fillStyle=AREA_COLORS[i%AREA_COLORS.length]+'88';
-    ctx.strokeStyle=AREA_COLORS[i%AREA_COLORS.length]+'cc';
-    ctx.lineWidth=1;
-    ctx.beginPath();ctx.arc(px,py,Math.max(rad,18),0,Math.PI*2);ctx.fill();ctx.stroke();
-  });
-  drawConnections(ctx,nodes,proj,'rgba(55,138,221,0.6)',1.4);
-  nodes.forEach(n=>{
-    const{px,py}=proj(n);
-    if(n.isRAP){ctx.fillStyle='#D85A30';ctx.fillRect(px-7,py-7,14,14);}
-    else{ctx.fillStyle='#185FA5';ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();}
-    ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
-    ctx.fillText(n.id,px,py+6);
-  });
+function getRenderableNodes(){
+  return nodes.filter(node=>Array.isArray(node.latlng));
 }
 
-// Panel 4: Pop Nodal
-function drawPop(){
-  const r=prepCanvas('cPop');if(!r||!nodes.length)return;
-  const{ctx,W,H}=r;
-  drawMapBg(ctx,W,H);
-  const proj=project(nodes,W,H,'cPop');
-  const nonRAP=nodes.filter(n=>!n.isRAP);
-  const maxP=Math.max(...nonRAP.map(n=>n.popProj||n.pop0));
-  drawConnections(ctx,nodes,proj,'rgba(55,138,221,0.5)',1.2);
-  nonRAP.forEach(n=>{
-    const{px,py}=proj(n);
-    const pop=n.popProj||n.pop0;
-    const t=pop/maxP;
-    const h=Math.max(8,t*60*(scales['cPop']||1));
-    const col=t>0.75?'#083d6e':t>0.4?'#185FA5':'#B5D4F4';
-    ctx.fillStyle=col+'cc';
-    ctx.fillRect(px-5,py-h,10,h);
-    ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='8px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
-    ctx.fillText(pop.toLocaleString('pt-BR'),px,py-h-1);
-    ctx.fillStyle=col;ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();
-  });
-  const rap=nodes.find(n=>n.isRAP);
-  if(rap){const{px,py}=proj(rap);ctx.fillStyle='#D85A30';ctx.fillRect(px-7,py-7,14,14);}
+function getMapBounds(){
+  const renderable=getRenderableNodes();
+  return renderable.length?L.latLngBounds(renderable.map(node=>node.latlng)):L.latLngBounds([SOLONOPOLE_CENTER]);
 }
 
-// Panel 5: Vazão Nodal
-function drawVaz(){
-  const r=prepCanvas('cVaz');if(!r||!nodes.length)return;
-  const{ctx,W,H}=r;
-  drawMapBg(ctx,W,H);
-  const proj=project(nodes,W,H,'cVaz');
-  const nonRAP=nodes.filter(n=>!n.isRAP);
-  const maxQ=Math.max(...nonRAP.map(n=>n.qLinear||0));
-  drawConnections(ctx,nodes,proj,'rgba(55,138,221,0.5)',1.2);
-  nonRAP.forEach(n=>{
-    const{px,py}=proj(n);
-    const q=n.qLinear||0;
-    const t=maxQ>0?q/maxQ:0;
-    const h=Math.max(6,t*65*(scales['cVaz']||1));
-    const col=t>0.7?'#7B2A0A':t>0.35?'#D85A30':'#F5C4B3';
-    ctx.fillStyle=col+'cc';
-    ctx.fillRect(px-5,py-h,10,h);
-    ctx.fillStyle='var(--color-text-primary,#222)';ctx.font='8px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
-    ctx.fillText(q.toFixed(2),px,py-h-1);
-    ctx.fillStyle=col;ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();
+function createBasemap(state){
+  const minimal=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
+  const fallback=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+  minimal.on('tileerror',()=>{
+    if(state.basemapMode==='fallback') return;
+    state.basemapMode='fallback';
+    if(state.map.hasLayer(minimal)) state.map.removeLayer(minimal);
+    fallback.addTo(state.map);
   });
-  const rap=nodes.find(n=>n.isRAP);
-  if(rap){const{px,py}=proj(rap);ctx.fillStyle='#D85A30';ctx.fillRect(px-7,py-7,14,14);}
+  return {minimal,fallback};
+}
+
+function ensureMap(mapId){
+  if(mapRegistry[mapId]) return mapRegistry[mapId];
+  const map=L.map(mapId,{zoomControl:false,preferCanvas:true,attributionControl:true});
+  L.control.scale({imperial:false}).addTo(map);
+  const state={map,basemapMode:'minimal',overlayRoot:L.layerGroup().addTo(map),layerControl:null};
+  state.baseLayers=createBasemap(state);
+  state.baseLayers.minimal.addTo(map);
+  map.setView(SOLONOPOLE_CENTER,13);
+  mapRegistry[mapId]=state;
+  return state;
+}
+
+function resetOverlay(state){
+  state.overlayRoot.clearLayers();
+  if(state.layerControl){
+    state.map.removeControl(state.layerControl);
+    state.layerControl=null;
+  }
+}
+
+function buildOverlayLayers(baseNodes,include){
+  const layers={};
+  const renderable=baseNodes.filter(node=>node.latlng);
+  const nodeIndex=new Map(renderable.map(node=>[node.id,node]));
+  if(include.network){
+    layers['Rede']=L.layerGroup();
+    renderable.forEach(node=>{
+      (node.conn||[]).forEach(connId=>{
+        if(node.id>connId) return;
+        const other=nodeIndex.get(connId);
+        if(!other) return;
+        L.polyline([node.latlng,other.latlng],{color:'#378ADD',weight:3,opacity:0.85}).addTo(layers['Rede']);
+      });
+    });
+  }
+  if(include.nodes){
+    layers['Nós']=L.layerGroup();
+    renderable.filter(node=>!node.isRAP).forEach(node=>{
+      L.circleMarker(node.latlng,{radius:5,color:'#185FA5',fillColor:'#185FA5',fillOpacity:0.92,weight:1.2}).addTo(layers['Nós']);
+    });
+  }
+  if(include.rap){
+    layers['RAP']=L.layerGroup();
+    renderable.filter(node=>node.isRAP).forEach(node=>{
+      L.rectangle([[node.latlng[0]-0.00018,node.latlng[1]-0.00018],[node.latlng[0]+0.00018,node.latlng[1]+0.00018]],{color:'#D85A30',fillColor:'#D85A30',fillOpacity:0.95,weight:1.2})
+        .bindTooltip(node.id,{permanent:true,direction:'top'})
+        .addTo(layers['RAP']);
+    });
+  }
+  if(include.labels){
+    layers['Rótulos']=L.layerGroup();
+    renderable.forEach(node=>{
+      L.marker(node.latlng,{interactive:false,icon:L.divIcon({className:'node-label',html:`<span>${node.id}</span>`})}).addTo(layers['Rótulos']);
+    });
+  }
+  return layers;
+}
+
+function applyMapLayers(mapId,layers,bounds){
+  const state=ensureMap(mapId);
+  resetOverlay(state);
+  const overlayMap={};
+  Object.entries(layers).forEach(([name,layer])=>{
+    layer.addTo(state.overlayRoot);
+    overlayMap[name]=layer;
+  });
+  state.layerControl=L.control.layers({'Base minimalista':state.baseLayers.minimal,'OSM':state.baseLayers.fallback},overlayMap,{collapsed:true}).addTo(state.map);
+  state.map.fitBounds(bounds.pad(0.18),{animate:false});
+}
+
+function renderLocationMap(){
+  const bounds=getMapBounds();
+  const renderable=getRenderableNodes();
+  const layers=buildOverlayLayers(renderable,{nodes:true,rap:true,labels:false,network:false});
+  layers['Área de estudo']=L.layerGroup();
+  if(renderable.length){
+    L.rectangle(bounds,{color:'#1D9E75',weight:2,fillColor:'#1D9E75',fillOpacity:0.08}).addTo(layers['Área de estudo']);
+    L.marker(bounds.getCenter(),{interactive:false,icon:L.divIcon({className:'node-label',html:'<span>Solonópole</span>'})}).addTo(layers['Área de estudo']);
+  }
+  applyMapLayers('mLoc',layers,bounds);
+}
+
+function renderNetworkMap(){
+  applyMapLayers('mRede',buildOverlayLayers(getRenderableNodes(),{network:true,nodes:true,rap:true,labels:true}),getMapBounds());
+}
+
+function computeVoronoiLatLngs(baseNodes){
+  const nodesWithCoords=baseNodes.filter(node=>!node.isRAP && Number.isFinite(node.x) && Number.isFinite(node.y));
+  if(nodesWithCoords.length<3) return [];
+  const xs=nodesWithCoords.map(node=>node.x);
+  const ys=nodesWithCoords.map(node=>node.y);
+  const pad=Math.max(20,Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))*0.08);
+  const delaunay=d3.Delaunay.from(nodesWithCoords,node=>node.x,node=>node.y);
+  const voronoi=delaunay.voronoi([Math.min(...xs)-pad,Math.min(...ys)-pad,Math.max(...xs)+pad,Math.max(...ys)+pad]);
+  return nodesWithCoords.map((node,index)=>{
+    const polygon=voronoi.cellPolygon(index);
+    if(!polygon) return null;
+    const latlngs=polygon.map(([x,y])=>toLatLng(x,y)).filter(Boolean);
+    return latlngs.length>=3?{node,latlngs}:null;
+  }).filter(Boolean);
+}
+
+function renderAreaMap(){
+  const renderable=getRenderableNodes();
+  const layers=buildOverlayLayers(renderable,{network:true,nodes:true,rap:true,labels:false});
+  layers['Áreas de influência']=L.layerGroup();
+  computeVoronoiLatLngs(renderable).forEach((cell,index)=>{
+    L.polygon(cell.latlngs,{color:'#4a9',weight:1,fillColor:AREA_COLORS[index%AREA_COLORS.length],fillOpacity:0.32})
+      .bindTooltip(`${cell.node.id} · ${formatNumber((cell.node.areaInf||0)/10000,2)} ha`)
+      .addTo(layers['Áreas de influência']);
+  });
+  applyMapLayers('mArea',layers,getMapBounds());
+}
+
+function colorByPopulation(value,maxValue){
+  if(!Number.isFinite(value) || maxValue<=0) return '#B5D4F4';
+  const ratio=value/maxValue;
+  if(ratio>0.7) return '#083d6e';
+  if(ratio>0.35) return '#378ADD';
+  return '#B5D4F4';
+}
+
+function colorByFlow(value,maxValue){
+  if(!Number.isFinite(value) || maxValue<=0) return '#F5C4B3';
+  const ratio=value/maxValue;
+  if(ratio>0.7) return '#7B2A0A';
+  if(ratio>0.35) return '#D85A30';
+  return '#F5C4B3';
+}
+
+function renderPopulationMap(){
+  const renderable=getRenderableNodes();
+  const values=renderable.filter(node=>!node.isRAP).map(node=>node.popProj||0);
+  const maxValue=Math.max(0,...values);
+  const layers=buildOverlayLayers(renderable,{network:true,rap:true,labels:false});
+  layers['População nodal']=L.layerGroup();
+  renderable.filter(node=>!node.isRAP).forEach(node=>{
+    L.circleMarker(node.latlng,{radius:6+((node.popProj||0)/(maxValue||1))*10,color:'#234',weight:1,fillColor:colorByPopulation(node.popProj||0,maxValue),fillOpacity:0.86})
+      .bindTooltip(`${node.id} · ${formatNumber(node.popProj||0)} hab`)
+      .addTo(layers['População nodal']);
+  });
+  applyMapLayers('mPop',layers,getMapBounds());
+}
+
+function renderFlowMap(){
+  const renderable=getRenderableNodes();
+  const values=renderable.filter(node=>!node.isRAP).map(node=>node.qLinear||0);
+  const maxValue=Math.max(0,...values);
+  const layers=buildOverlayLayers(renderable,{network:true,rap:true,labels:false});
+  layers['Vazão nodal']=L.layerGroup();
+  renderable.filter(node=>!node.isRAP).forEach(node=>{
+    L.circleMarker(node.latlng,{radius:6+((node.qLinear||0)/(maxValue||1))*10,color:'#7B2A0A',weight:1,fillColor:colorByFlow(node.qLinear||0,maxValue),fillOpacity:0.88})
+      .bindTooltip(`${node.id} · ${formatNumber(node.qLinear||0,3)} L/s`)
+      .addTo(layers['Vazão nodal']);
+  });
+  applyMapLayers('mVaz',layers,getMapBounds());
+}
+
+function renderIssueList(){
+  const list=document.getElementById('issueList');
+  list.innerHTML=(diagnostics.notes||[]).slice(0,6).map(item=>`<li><i class="ti ti-info-circle" aria-hidden="true"></i><span>${item}</span></li>`).join('');
 }
 
 function drawFlowChart(){
-  const nonRAP=nodes.filter(n=>!n.isRAP);
-  if(!nonRAP.length)return;
-  if(flowChartInst){flowChartInst.destroy();}
+  const nonRAP=nodes.filter(node=>!node.isRAP);
+  if(flowChartInst) flowChartInst.destroy();
   flowChartInst=new Chart(document.getElementById('flowChart'),{
     type:'bar',
     data:{
-      labels:nonRAP.map(n=>n.id),
+      labels:nonRAP.map(node=>node.id),
       datasets:[
-        {label:'Método Linear',data:nonRAP.map(n=>parseFloat((n.qLinear||0).toFixed(3))),backgroundColor:'#185FA5',borderWidth:0},
-        {label:'Método Área Nodal',data:nonRAP.map(n=>parseFloat((n.qNodal||0).toFixed(3))),backgroundColor:'#D85A30',borderWidth:0}
+        {label:'Método Linear',data:nonRAP.map(node=>Number((node.qLinear||0).toFixed(3))),backgroundColor:'#185FA5',borderWidth:0},
+        {label:'Método Área Nodal',data:nonRAP.map(node=>Number((node.qNodal||0).toFixed(3))),backgroundColor:'#D85A30',borderWidth:0}
       ]
     },
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true,
+      maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{
-        x:{ticks:{font:{size:10},autoSkip:false,maxRotation:0},grid:{display:false}},
-        y:{ticks:{font:{size:10},callback:v=>v.toFixed(1)},title:{display:true,text:'Vazão (L/s)',font:{size:10}}}
+        x:{ticks:{maxRotation:90,minRotation:60,font:{size:10}}},
+        y:{beginAtZero:true,title:{display:true,text:'L/s'}}
       }
     }
   });
 }
 
 function updateMetrics(){
-  const nonRAP=nodes.filter(n=>!n.isRAP);
-  const pop0=nonRAP.reduce((s,n)=>s+n.pop0,0);
-  const popProj=nonRAP.reduce((s,n)=>s+(n.popProj||n.pop0),0);
-  const qLin=nonRAP.reduce((s,n)=>s+(n.qLinear||0),0);
-  const qNod=nonRAP.reduce((s,n)=>s+(n.qNodal||0),0);
-  const maxP=nonRAP.reduce((a,b)=>(b.popProj||b.pop0)>(a.popProj||a.pop0)?b:a,nonRAP[0]||{});
-  const maxQ=nonRAP.reduce((a,b)=>(b.qLinear||0)>(a.qLinear||0)?b:a,nonRAP[0]||{});
-  const totalArea=nonRAP.reduce((s,n)=>s+n.areaInf,0);
-  const maxArea=Math.max(...nonRAP.map(n=>n.areaInf));
-  const minArea=Math.min(...nonRAP.map(n=>n.areaInf));
-  const diff=(qLin>0?(qNod-qLin)/qLin*100:0);
-
-  document.getElementById('p1pop0').textContent=pop0.toLocaleString('pt-BR');
-  document.getElementById('p1area').textContent=(totalArea/10000).toFixed(1);
-  document.getElementById('p2nodes').textContent=nonRAP.length;
-  let pipes=0;nodes.forEach(n=>pipes+=(n.conn||[]).length);
-  document.getElementById('p2pipes').textContent=pipes;
-  document.getElementById('p3area').textContent=(totalArea/10000).toFixed(1);
-  document.getElementById('p3max').textContent=(maxArea/10000).toFixed(1);
-  document.getElementById('p3min').textContent=(minArea/10000).toFixed(1);
-  document.getElementById('p4pop0').textContent=pop0.toLocaleString('pt-BR');
-  document.getElementById('p4popProj').textContent=popProj.toLocaleString('pt-BR');
+  const nonRAP=nodes.filter(node=>!node.isRAP);
+  const pop0=nonRAP.reduce((sum,node)=>sum+(node.pop0||0),0);
+  const popProj=nonRAP.reduce((sum,node)=>sum+(node.popProj||0),0);
+  const qLin=nonRAP.reduce((sum,node)=>sum+(node.qLinear||0),0);
+  const qNod=nonRAP.reduce((sum,node)=>sum+(node.qNodal||0),0);
+  const maxP=nonRAP.reduce((best,node)=>(node.popProj||0)>(best.popProj||0)?node:best,nonRAP[0]||{});
+  const maxQ=nonRAP.reduce((best,node)=>(node.qLinear||0)>(best.qLinear||0)?node:best,nonRAP[0]||{});
+  const totalArea=projectMeta.projectArea || nonRAP.reduce((sum,node)=>sum+(node.areaInf||0),0);
+  const maxArea=Math.max(0,...nonRAP.map(node=>node.areaInf||0));
+  const minArea=nonRAP.length?Math.min(...nonRAP.map(node=>node.areaInf||0)):0;
+  const diff=qLin>0?((qNod-qLin)/qLin)*100:0;
+  document.getElementById('p1pop0').textContent=formatNumber(pop0);
+  document.getElementById('p1area').textContent=formatNumber(totalArea/10000,2);
+  document.getElementById('p2nodes').textContent=formatNumber(nonRAP.length);
+  document.getElementById('p2rap').textContent=formatNumber(nodes.filter(node=>node.isRAP).length);
+  document.getElementById('p2pipes').textContent=formatNumber(diagnostics.totalSegments || nonRAP.reduce((sum,node)=>sum+(node.conn||[]).length,0)/2,0);
+  document.getElementById('p2ext').textContent=formatNumber(diagnostics.totalNetworkLength,0);
+  document.getElementById('p3area').textContent=formatNumber(totalArea/10000,2);
+  document.getElementById('p3max').textContent=formatNumber(maxArea/10000,2);
+  document.getElementById('p3min').textContent=formatNumber(minArea/10000,2);
+  document.getElementById('p4pop0').textContent=formatNumber(pop0);
+  document.getElementById('p4popProj').textContent=formatNumber(popProj);
   document.getElementById('p4maxNode').textContent=maxP.id||'—';
-  document.getElementById('p5qlin').textContent=qLin.toFixed(2);
-  document.getElementById('p5qmax').textContent=(maxQ.qLinear||0).toFixed(2);
-  document.getElementById('c6lin').textContent=qLin.toFixed(2)+' L/s';
-  document.getElementById('c6nod').textContent=qNod.toFixed(2)+' L/s';
-  document.getElementById('c6diff').textContent=(diff>=0?'+':'')+diff.toFixed(2)+'%';
+  document.getElementById('p5qlin').textContent=formatNumber(qLin,2);
+  document.getElementById('p5qmax').textContent=formatNumber(maxQ.qLinear||0,2);
+  document.getElementById('c6lin').textContent=`${formatNumber(qLin,2)} L/s`;
+  document.getElementById('c6nod').textContent=`${formatNumber(qNod,2)} L/s`;
+  document.getElementById('c6diff').textContent=`${diff>=0?'+':''}${formatNumber(diff,2)}%`;
+  document.getElementById('dqExcel').textContent=formatNumber(diagnostics.excelNodeCount);
+  document.getElementById('dqDxf').textContent=formatNumber(diagnostics.dxfNodeCount);
+  document.getElementById('dqLinked').textContent=formatNumber(diagnostics.linkedNodeCount);
+  document.getElementById('dqUnmatched').textContent=formatNumber(diagnostics.excelOnlyCount+diagnostics.dxfOnlyCount);
+  document.getElementById('dqMissingGeom').textContent=formatNumber(diagnostics.missingGeometryCount);
 }
 
-function calcDemand(){
-  const q=150,k1=1.2,k2=1.5,loss=0.3,r=0.015,h=20;
-  const totalArea=nodes.filter(n=>!n.isRAP).reduce((s,n)=>s+n.areaInf,0);
-  const totalPopProj=nodes.filter(n=>!n.isRAP).reduce((s,n)=>s+Math.round(n.pop0*Math.pow(1+r,h)),0);
-  const qUnit=(q*k1*k2)/(86400*(1-loss));
-  nodes.forEach(n=>{
-    if(n.isRAP){n.popProj=0;n.qLinear=0;n.qNodal=0;return;}
-    n.popProj=Math.round(n.pop0*Math.pow(1+r,h));
-    n.qLinear=n.popProj*qUnit;
-    n.qNodal=totalPopProj*qUnit*(n.areaInf/totalArea);
-  });
+function renderAllMaps(){
+  renderLocationMap();
+  renderNetworkMap();
+  renderAreaMap();
+  renderPopulationMap();
+  renderFlowMap();
 }
 
-function redrawAll(){
-  drawLoc();drawRede();drawAreas();drawPop();drawVaz();
-}
-
-function initAll(){
-  ['cLoc','cRede','cArea','cPop','cVaz'].forEach(id=>{initView(id);setupDrag(id);});
-  calcDemand();
+function initAll(statusMessage){
+  ensureDerivedMetrics();
   updateMetrics();
-  redrawAll();
+  renderIssueList();
+  renderAllMaps();
   drawFlowChart();
-  document.getElementById('statusMsg').textContent='Dados carregados — '+nodes.filter(n=>!n.isRAP).length+' nós, navegue pelas 6 abas';
+  document.getElementById('statusMsg').textContent=statusMessage;
+}
+
+function refreshFromImports(reason){
+  buildMergedDataset();
+  const unmatched=diagnostics.excelOnlyCount+diagnostics.dxfOnlyCount;
+  const suffix=diagnostics.missingGeometryCount?` ${diagnostics.missingGeometryCount} nó(s) ainda sem geometria.`:'';
+  initAll(`${reason} — planilha: ${diagnostics.excelNodeCount}, DXF: ${diagnostics.dxfNodeCount}, vinculados: ${diagnostics.linkedNodeCount}, não casados: ${unmatched}.${suffix}`);
+}
+
+function zoom(mapId,factor){
+  const state=ensureMap(mapId);
+  if(factor>1) state.map.zoomIn();
+  else state.map.zoomOut();
+}
+
+function resetView(mapId){
+  ensureMap(mapId).map.fitBounds(getMapBounds().pad(0.18),{animate:false});
 }
 
 document.getElementById('demoBtn').addEventListener('click',()=>{
-  nodes=DEMO.map(n=>({...n}));
-  initAll();
+  currentImports={excel:null,dxf:null,source:'demo'};
+  buildMergedDataset();
+  initAll('Modo demonstração carregado com base cartográfica minimalista.');
 });
 
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('panel'+t.dataset.tab).classList.add('active');
-    setTimeout(()=>redrawAll(),50);
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(item=>item.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(panel=>panel.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel'+tab.dataset.tab).classList.add('active');
+    setTimeout(()=>MAP_IDS.forEach(id=>mapRegistry[id]?.map.invalidateSize()),80);
   });
 });
 
-document.getElementById('xlsxIn').addEventListener('change',function(e){
-  const file=e.target.files[0];if(!file)return;
+document.getElementById('xlsxIn').addEventListener('change',event=>{
+  const file=event.target.files[0];
+  if(!file) return;
   const reader=new FileReader();
-  reader.onload=function(ev){
+  reader.onload=loadEvent=>{
     try{
-      const wb=XLSX.read(ev.target.result,{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws);
-      nodes=rows.map((r,i)=>{
-        const id=String(r['No']||r['Nó']||r['ID']||r['id']||('N'+(i+1)));
-        return{
-          id,
-          pop0:parseFloat(r['Pop_Atual']||r['pop0']||r['Pop0']||r['populacao']||500),
-          areaInf:parseFloat(r['Area_Inf']||r['areaInf']||r['AreaInf']||r['area']||40000),
-          x:parseFloat(r['X']||r['x']||Math.random()*400+50),
-          y:parseFloat(r['Y']||r['y']||Math.random()*380+50),
-          isRAP:id.toUpperCase().includes('RAP'),
-          conn:[],
-        };
-      });
-      initAll();
-      document.getElementById('statusMsg').textContent='Planilha carregada: '+nodes.length+' registros';
-    }catch(err){document.getElementById('statusMsg').textContent='Erro: '+err.message;}
+      const workbook=XLSX.read(loadEvent.target.result,{type:'array',cellDates:false});
+      currentImports={...currentImports,excel:parseWorkbookData(workbook),source:'imports'};
+      refreshFromImports(`Planilha carregada: ${file.name}`);
+    }catch(error){
+      document.getElementById('statusMsg').textContent=`Erro ao ler planilha: ${error.message}`;
+    }
   };
   reader.readAsArrayBuffer(file);
 });
 
-document.getElementById('dxfIn').addEventListener('change',function(e){
-  const file=e.target.files[0];if(!file)return;
+document.getElementById('dxfIn').addEventListener('change',event=>{
+  const file=event.target.files[0];
+  if(!file) return;
   const reader=new FileReader();
-  reader.onload=function(ev){
-    const text=ev.target.result;
-    const lines=text.split(/\r?\n/);
-    const parsed=[],lineObjs=[];let i=0;
-    while(i<lines.length){
-      if(lines[i].trim()==='INSERT'){
-        let n={id:'',x:0,y:0,conn:[],pop0:500,areaInf:40000};i++;
-        while(i<lines.length){
-          const code=parseInt(lines[i].trim()),val=(lines[i+1]||'').trim();
-          if(code===2)n.id=val;if(code===10)n.x=parseFloat(val)||0;if(code===20)n.y=parseFloat(val)||0;
-          i+=2;if(isNaN(code))break;
-        }
-        if(n.id){n.isRAP=n.id.toUpperCase().includes('RAP');parsed.push(n);}
-      }else if(lines[i].trim()==='LINE'){
-        let ln={x1:0,y1:0,x2:0,y2:0};i++;
-        while(i<lines.length){
-          const code=parseInt(lines[i].trim()),val=(lines[i+1]||'').trim();
-          if(code===10)ln.x1=parseFloat(val)||0;if(code===20)ln.y1=parseFloat(val)||0;
-          if(code===11)ln.x2=parseFloat(val)||0;if(code===21)ln.y2=parseFloat(val)||0;
-          i+=2;if(isNaN(code))break;
-        }
-        lineObjs.push(ln);
-      }else i++;
+  reader.onload=loadEvent=>{
+    try{
+      currentImports={...currentImports,dxf:parseDxf(loadEvent.target.result),source:'imports'};
+      refreshFromImports(`DXF carregado: ${file.name}`);
+    }catch(error){
+      document.getElementById('statusMsg').textContent=`Erro ao ler DXF: ${error.message}`;
     }
-    if(parsed.length>0){
-      if(nodes.length>0){
-        const dm={};parsed.forEach(n=>dm[n.id]=n);
-        nodes=nodes.map(n=>dm[n.id]?{...n,x:dm[n.id].x,y:dm[n.id].y}:n);
-      }else nodes=parsed;
-      const tol=2;
-      nodes.forEach(n=>{lineObjs.forEach(ln=>{
-        const d1=Math.hypot(n.x-ln.x1,n.y-ln.y1),d2=Math.hypot(n.x-ln.x2,n.y-ln.y2);
-        if(d1<tol||d2<tol){
-          const other=nodes.find(o=>o.id!==n.id&&(Math.hypot(o.x-ln.x2,o.y-ln.y2)<tol||Math.hypot(o.x-ln.x1,o.y-ln.y1)<tol));
-          if(other&&!(n.conn||[]).includes(other.id)){if(!n.conn)n.conn=[];n.conn.push(other.id);}
-        }
-      });});
-      initAll();
-      document.getElementById('statusMsg').textContent='DXF carregado: '+parsed.length+' pontos extraídos';
-    }else{document.getElementById('statusMsg').textContent='DXF: nenhum bloco INSERT encontrado';}
   };
   reader.readAsText(file);
 });
 
-window.zoom=zoom;window.resetView=resetView;
+window.zoom=zoom;
+window.resetView=resetView;
+buildMergedDataset();
+initAll('Clique em “Demo” para carregar o exemplo ou importe seus arquivos Excel e DXF.');
 </script>
