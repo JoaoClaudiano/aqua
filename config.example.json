@@ -1,0 +1,21 @@
+{
+  "cad_file": "input/rede.dxf",
+  "nodes_excel": "input/nos.xlsx",
+  "output_dir": "output",
+  "gis_network_file": null,
+  "boundary_file": "input/limite.geojson",
+  "dem_file": "input/dem.tif",
+  "source_crs": "EPSG:31984",
+  "target_crs": "EPSG:4674",
+  "node_id_col_excel": "node_id",
+  "node_id_col_cad": "node_id",
+  "population_col": "population",
+  "flow_col": "flow_lps",
+  "buffer_distance_m": 50,
+  "voronoi_clip_buffer_m": 300,
+  "export": {
+    "layout": "A3",
+    "dpi": 300,
+    "formats": ["png", "pdf"]
+  }
+}
