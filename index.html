@@ -289,9 +289,13 @@ input[type=file]{display:none}
 <script>
 const CONFIG={q:150,k1:1.2,k2:1.5,loss:0.3,growth:0.015,horizon:20,sourceCrs:'EPSG:31984',projectionDef:'+proj=utm +zone=24 +south +datum=SIRGAS2000 +units=m +no_defs'};
 const MAP_IDS=['mLoc','mRede','mArea','mPop','mVaz'];
-const SOLONOPOLE_CENTER=[-5.7347,-39.0083];
-const RAP_HALF_SIZE_DEGREES=0.00018;
-const VORONOI_BOUNDARY_PAD_RATIO=0.08;
+const SOLONOPOLE_CITY_CENTER=[-5.7347,-39.0083];
+const RAP_HALF_SIZE_DEGREES=0.00018; // Aproximadamente 20 m na latitude de Solonópole para destacar a RAP no mapa.
+const VORONOI_BOUNDARY_PAD_RATIO=0.08; // Expande o envelope em 8% para evitar células Voronoi truncadas na borda.
+const MAX_CONNECTION_TOLERANCE=25; // Limite superior em unidades do DXF para não conectar trechos distantes por engano.
+const CONNECTION_TOLERANCE_RATIO=0.003; // Usa 0,3% da diagonal da rede para adaptar a tolerância à escala do desenho.
+const MIN_VORONOI_PAD=20;
+const MAP_RESIZE_DEBOUNCE_MS=80; // Pequeno atraso para o Leaflet recalcular o tamanho após a troca de abas.
 const DEMO=[
   {id:'RAP',x:220,y:55,pop0:0,areaInf:0,isRAP:true,conn:['N1','N2','N7']},
   {id:'N1',x:155,y:125,pop0:580,areaInf:48200,conn:['N2','N4']},
@@ -401,7 +405,7 @@ function toLatLng(x,y){
     if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
     return [lat,lng];
   }catch(error){
-    diagnostics.projectionErrors=(diagnostics.projectionErrors||0)+1;
+    diagnostics.projectionErrors+=1;
     console.warn('Falha ao reprojetar coordenadas', {x, y, error});
     return null;
   }
@@ -679,7 +683,7 @@ function inferConnections(records,segments){
   const xs=validNodes.map(node=>node.x);
   const ys=validNodes.map(node=>node.y);
   const diagonal=Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys));
-  const tolerance=Math.max(1,Math.min(diagonal*0.003,25));
+  const tolerance=Math.max(1,Math.min(diagonal*CONNECTION_TOLERANCE_RATIO,MAX_CONNECTION_TOLERANCE));
   segments.forEach(segment=>{
     const [start,end]=segment;
     totalLength+=Math.hypot(end[0]-start[0],end[1]-start[1]);
@@ -838,7 +842,7 @@ function getRenderableNodes(){
 
 function getMapBounds(){
   const renderable=getRenderableNodes();
-  return renderable.length?L.latLngBounds(renderable.map(node=>node.latlng)):L.latLngBounds([SOLONOPOLE_CENTER]);
+  return renderable.length?L.latLngBounds(renderable.map(node=>node.latlng)):L.latLngBounds([SOLONOPOLE_CITY_CENTER]);
 }
 
 function createBasemap(state){
@@ -860,7 +864,7 @@ function ensureMap(mapId){
   const state={map,basemapMode:'minimal',overlayRoot:L.layerGroup().addTo(map),layerControl:null};
   state.baseLayers=createBasemap(state);
   state.baseLayers.minimal.addTo(map);
-  map.setView(SOLONOPOLE_CENTER,13);
+  map.setView(SOLONOPOLE_CITY_CENTER,13);
   mapRegistry[mapId]=state;
   return state;
 }
@@ -944,7 +948,7 @@ function computeVoronoiLatLngs(baseNodes){
   if(nodesWithCoords.length<3) return [];
   const xs=nodesWithCoords.map(node=>node.x);
   const ys=nodesWithCoords.map(node=>node.y);
-  const pad=Math.max(20,Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))*VORONOI_BOUNDARY_PAD_RATIO);
+  const pad=Math.max(MIN_VORONOI_PAD,Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))*VORONOI_BOUNDARY_PAD_RATIO);
   const delaunay=d3.Delaunay.from(nodesWithCoords,node=>node.x,node=>node.y);
   const voronoi=delaunay.voronoi([Math.min(...xs)-pad,Math.min(...ys)-pad,Math.max(...xs)+pad,Math.max(...ys)+pad]);
   return nodesWithCoords.map((node,index)=>{
@@ -1122,7 +1126,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     document.querySelectorAll('.panel').forEach(panel=>panel.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('panel'+tab.dataset.tab).classList.add('active');
-    setTimeout(()=>MAP_IDS.forEach(id=>mapRegistry[id]?.map.invalidateSize()),80);
+    setTimeout(()=>MAP_IDS.forEach(id=>mapRegistry[id]?.map.invalidateSize()),MAP_RESIZE_DEBOUNCE_MS);
   });
 });
 
