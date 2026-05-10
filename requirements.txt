@@ -1,0 +1,10 @@
+geopandas
+shapely
+pandas
+matplotlib
+contextily
+scipy
+ezdxf
+rasterio
+pyyaml
+openpyxl
