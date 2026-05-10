@@ -75,6 +75,7 @@ def make_location_map(boundary: gpd.GeoDataFrame, output_stem: Path, layout: str
     try:
         ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
     except Exception:
+        # Em ambientes sem internet, o mapa base pode falhar; seguimos com o layout cartográfico.
         pass
     _save(fig, output_stem, formats, dpi)
     plt.close(fig)
@@ -126,9 +127,16 @@ def make_proportional_symbol_map(
 ):
     fig, ax = plt.subplots(figsize=_layout_size(layout))
     plot_nodes = nodes[nodes.geometry.notna()].copy()
-    plot_nodes["__value"] = pd.to_numeric(plot_nodes[value_col], errors="coerce").fillna(0)
-    plot_nodes["__size"] = (plot_nodes["__value"].clip(lower=0) + 1) * 6
-    plot_nodes.plot(ax=ax, column="__value", cmap=cmap, markersize=plot_nodes["__size"].to_numpy(), alpha=0.75, legend=True)
+    plot_nodes["_plot_value"] = pd.to_numeric(plot_nodes[value_col], errors="coerce").fillna(0)
+    plot_nodes["_plot_size"] = (plot_nodes["_plot_value"].clip(lower=0) + 1) * 6
+    plot_nodes.plot(
+        ax=ax,
+        column="_plot_value",
+        cmap=cmap,
+        markersize=plot_nodes["_plot_size"].to_numpy(),
+        alpha=0.75,
+        legend=True,
+    )
 
     _add_north_arrow(ax)
     _add_scale_bar(ax)

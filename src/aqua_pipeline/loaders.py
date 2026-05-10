@@ -9,8 +9,11 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString, Point
 
-NODE_LABEL_PATTERN = re.compile(r"^N\s*\d+$", re.IGNORECASE)
+NODE_LABEL_PATTERN = re.compile(r"^N\d+$", re.IGNORECASE)
 NODE_ID_ALIASES = {"node_id", "node id", "node", "no", "no.", "nó", "id_no", "id no", "id nó"}
+MAX_HEADER_SCAN_ROWS = 60
+NODE_MATCH_DIVISOR = 100.0
+MAX_NODE_MATCH_SCORE = 1.5
 
 
 def _normalize_text(value) -> str:
@@ -34,7 +37,7 @@ def _load_excel_best_sheet(path: Path) -> pd.DataFrame:
         if raw.empty:
             continue
 
-        max_header_scan = min(len(raw), 60)
+        max_header_scan = min(len(raw), MAX_HEADER_SCAN_ROWS)
         header_idx: int | None = None
         for idx in range(max_header_scan):
             normalized_row = [_normalize_text(v) for v in raw.iloc[idx].tolist()]
@@ -70,7 +73,7 @@ def _load_excel_best_sheet(path: Path) -> pd.DataFrame:
                 .str.replace(r"\s+", "", regex=True)
                 .str.upper()
             )
-            score += min(float(node_values.str.match(r"^N\d+$", na=False).sum()) / 100.0, 1.5)
+            score += min(float(node_values.str.match(r"^N\d+$", na=False).sum()) / NODE_MATCH_DIVISOR, MAX_NODE_MATCH_SCORE)
 
         if any(("vazao" in norm) or ("flow" in norm) or ("qmh" in norm) for norm in normalized_columns):
             score += 1.0
@@ -169,10 +172,11 @@ def load_cad_network(path: str | Path, source_crs: str = "EPSG:31984") -> tuple[
         elif etype in {"TEXT", "MTEXT"}:
             text_value = entity.dxf.text if etype == "TEXT" else entity.text
             text_value = "" if text_value is None else str(text_value).replace("\\P", " ").strip()
-            if not NODE_LABEL_PATTERN.match(text_value):
+            normalized_label = _normalize_node_label(text_value)
+            if not NODE_LABEL_PATTERN.match(normalized_label):
                 continue
 
-            node_id = _normalize_node_label(text_value)
+            node_id = normalized_label
             if node_id in node_ids_seen:
                 continue
 
@@ -189,11 +193,11 @@ def load_cad_network(path: str | Path, source_crs: str = "EPSG:31984") -> tuple[
     if pipe_features:
         pipes = gpd.GeoDataFrame(pipe_features, geometry="geometry", crs=source_crs)
     else:
-        pipes = gpd.GeoDataFrame(pd.DataFrame(columns=["cad_id", "layer", "geometry"]), geometry="geometry", crs=source_crs)
+        pipes = gpd.GeoDataFrame(columns=["cad_id", "layer", "geometry"], geometry="geometry", crs=source_crs)
 
     if node_features:
         nodes = gpd.GeoDataFrame(node_features, geometry="geometry", crs=source_crs)
     else:
-        nodes = gpd.GeoDataFrame(pd.DataFrame(columns=["node_id", "layer", "geometry"]), geometry="geometry", crs=source_crs)
+        nodes = gpd.GeoDataFrame(columns=["node_id", "layer", "geometry"], geometry="geometry", crs=source_crs)
 
     return pipes, nodes
