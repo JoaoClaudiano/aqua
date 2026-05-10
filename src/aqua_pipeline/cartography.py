@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import contextily as ctx
 import geopandas as gpd
@@ -71,7 +72,16 @@ def make_location_map(boundary: gpd.GeoDataFrame, output_stem: Path, layout: str
     _add_scale_bar(ax)
     ax.set_title("Mapa de Localização", fontsize=16, fontweight="bold")
     ax.set_axis_off()
-    ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
+    try:
+        ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
+    except Exception as exc:
+        # Em ambientes sem internet, o mapa base pode falhar; seguimos com o layout cartográfico.
+        msg = str(exc).lower()
+        network_error_markers = ("connection", "max retries", "name resolution", "timed out", "tile")
+        if any(marker in msg for marker in network_error_markers):
+            pass
+        else:
+            raise
     _save(fig, output_stem, formats, dpi)
     plt.close(fig)
 
@@ -121,9 +131,17 @@ def make_proportional_symbol_map(
     cmap: str = "viridis",
 ):
     fig, ax = plt.subplots(figsize=_layout_size(layout))
-    vals = nodes[value_col].fillna(0)
-    sizes = (vals.clip(lower=0) + 1) * 6
-    nodes.plot(ax=ax, column=value_col, cmap=cmap, markersize=sizes, alpha=0.75, legend=True)
+    plot_nodes = nodes[nodes.geometry.notna()].copy()
+    plot_nodes["_plot_value"] = pd.to_numeric(plot_nodes[value_col], errors="coerce").fillna(0)
+    plot_nodes["_plot_size"] = (plot_nodes["_plot_value"].clip(lower=0) + 1) * 6
+    plot_nodes.plot(
+        ax=ax,
+        column="_plot_value",
+        cmap=cmap,
+        markersize=plot_nodes["_plot_size"].to_numpy(),
+        alpha=0.75,
+        legend=True,
+    )
 
     _add_north_arrow(ax)
     _add_scale_bar(ax)
