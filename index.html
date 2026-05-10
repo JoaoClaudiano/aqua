@@ -287,9 +287,11 @@ input[type=file]{display:none}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6.0.4/dist/d3-delaunay.min.js"></script>
 <script>
-const CONFIG={q:150,k1:1.2,k2:1.5,loss:0.3,growth:0.015,horizon:20,sourceCrs:'EPSG:31984'};
+const CONFIG={q:150,k1:1.2,k2:1.5,loss:0.3,growth:0.015,horizon:20,sourceCrs:'EPSG:31984',projectionDef:'+proj=utm +zone=24 +south +datum=SIRGAS2000 +units=m +no_defs'};
 const MAP_IDS=['mLoc','mRede','mArea','mPop','mVaz'];
 const SOLONOPOLE_CENTER=[-5.7347,-39.0083];
+const RAP_HALF_SIZE_DEGREES=0.00018;
+const VORONOI_BOUNDARY_PAD_RATIO=0.08;
 const DEMO=[
   {id:'RAP',x:220,y:55,pop0:0,areaInf:0,isRAP:true,conn:['N1','N2','N7']},
   {id:'N1',x:155,y:125,pop0:580,areaInf:48200,conn:['N2','N4']},
@@ -337,7 +339,7 @@ let diagnostics=createDiagnostics();
 let currentImports={excel:null,dxf:null,source:'demo'};
 const mapRegistry={};
 
-proj4.defs('EPSG:31984','+proj=utm +zone=24 +south +datum=SIRGAS2000 +units=m +no_defs');
+proj4.defs(CONFIG.sourceCrs,CONFIG.projectionDef);
 
 function createDiagnostics(){
   return {
@@ -355,7 +357,8 @@ function createDiagnostics(){
     totalNetworkLength:0,
     totalSegments:0,
     rapCount:0,
-    notes:['Carregue a planilha e o DXF para gerar o diagnóstico.']
+    notes:['Carregue a planilha e o DXF para gerar o diagnóstico.'],
+    projectionErrors:0
   };
 }
 
@@ -397,7 +400,9 @@ function toLatLng(x,y){
     const [lng,lat]=proj4(CONFIG.sourceCrs,'EPSG:4326',[x,y]);
     if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
     return [lat,lng];
-  }catch(_error){
+  }catch(error){
+    diagnostics.projectionErrors=(diagnostics.projectionErrors||0)+1;
+    console.warn('Falha ao reprojetar coordenadas', {x, y, error});
     return null;
   }
 }
@@ -691,12 +696,30 @@ function inferConnections(records,segments){
   };
 }
 
+function formatPreviewList(items,total){
+  if(!items.length) return '—';
+  return `${items.join(', ')}${total>items.length?'…':''}`;
+}
+
+function countUniqueConnections(list){
+  const edges=new Set();
+  list.forEach(node=>{
+    (node.conn||[]).forEach(connId=>{
+      const a=String(node.id);
+      const b=String(connId);
+      if(!a || !b) return;
+      edges.add([a,b].sort().join('→'));
+    });
+  });
+  return edges.size;
+}
+
 function buildDiagnosticNotes(summary,matchedSheets){
   const notes=[];
   if(matchedSheets.length) notes.push(`Abas lidas automaticamente: ${matchedSheets.join(', ')}.`);
   if(summary.missingGeometryCount) notes.push(`${summary.missingGeometryCount} nó(s) da planilha seguem sem geometria; carregue o DXF ou informe colunas X/Y.`);
-  if(summary.excelOnlyCount) notes.push(`Nós apenas na planilha: ${summary.unmatchedExcelIds.join(', ')}${summary.excelOnlyCount>summary.unmatchedExcelIds.length?'…':''}`);
-  if(summary.dxfOnlyCount) notes.push(`Nós apenas no DXF: ${summary.unmatchedDxfIds.join(', ')}${summary.dxfOnlyCount>summary.unmatchedDxfIds.length?'…':''}`);
+  if(summary.excelOnlyCount) notes.push(`Nós apenas na planilha: ${formatPreviewList(summary.unmatchedExcelIds, summary.excelOnlyCount)}`);
+  if(summary.dxfOnlyCount) notes.push(`Nós apenas no DXF: ${formatPreviewList(summary.unmatchedDxfIds, summary.dxfOnlyCount)}`);
   if(summary.duplicateExcelIds.length) notes.push(`IDs duplicados na planilha: ${summary.duplicateExcelIds.join(', ')}.`);
   if(summary.duplicateDxfIds.length) notes.push(`IDs duplicados no DXF: ${summary.duplicateDxfIds.join(', ')}.`);
   if(summary.invalidExcelRows.length) notes.push(`Linhas ignoradas na planilha: ${summary.invalidExcelRows.join(' | ')}.`);
@@ -874,7 +897,7 @@ function buildOverlayLayers(baseNodes,include){
   if(include.rap){
     layers['RAP']=L.layerGroup();
     renderable.filter(node=>node.isRAP).forEach(node=>{
-      L.rectangle([[node.latlng[0]-0.00018,node.latlng[1]-0.00018],[node.latlng[0]+0.00018,node.latlng[1]+0.00018]],{color:'#D85A30',fillColor:'#D85A30',fillOpacity:0.95,weight:1.2})
+      L.rectangle([[node.latlng[0]-RAP_HALF_SIZE_DEGREES,node.latlng[1]-RAP_HALF_SIZE_DEGREES],[node.latlng[0]+RAP_HALF_SIZE_DEGREES,node.latlng[1]+RAP_HALF_SIZE_DEGREES]],{color:'#D85A30',fillColor:'#D85A30',fillOpacity:0.95,weight:1.2})
         .bindTooltip(node.id,{permanent:true,direction:'top'})
         .addTo(layers['RAP']);
     });
@@ -921,7 +944,7 @@ function computeVoronoiLatLngs(baseNodes){
   if(nodesWithCoords.length<3) return [];
   const xs=nodesWithCoords.map(node=>node.x);
   const ys=nodesWithCoords.map(node=>node.y);
-  const pad=Math.max(20,Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))*0.08);
+  const pad=Math.max(20,Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))*VORONOI_BOUNDARY_PAD_RATIO);
   const delaunay=d3.Delaunay.from(nodesWithCoords,node=>node.x,node=>node.y);
   const voronoi=delaunay.voronoi([Math.min(...xs)-pad,Math.min(...ys)-pad,Math.max(...xs)+pad,Math.max(...ys)+pad]);
   return nodesWithCoords.map((node,index)=>{
@@ -1033,7 +1056,7 @@ function updateMetrics(){
   document.getElementById('p1area').textContent=formatNumber(totalArea/10000,2);
   document.getElementById('p2nodes').textContent=formatNumber(nonRAP.length);
   document.getElementById('p2rap').textContent=formatNumber(nodes.filter(node=>node.isRAP).length);
-  document.getElementById('p2pipes').textContent=formatNumber(diagnostics.totalSegments || nonRAP.reduce((sum,node)=>sum+(node.conn||[]).length,0)/2,0);
+  document.getElementById('p2pipes').textContent=formatNumber(diagnostics.totalSegments || countUniqueConnections(nodes),0);
   document.getElementById('p2ext').textContent=formatNumber(diagnostics.totalNetworkLength,0);
   document.getElementById('p3area').textContent=formatNumber(totalArea/10000,2);
   document.getElementById('p3max').textContent=formatNumber(maxArea/10000,2);
