@@ -14,6 +14,9 @@ NODE_ID_ALIASES = {"node_id", "node id", "node", "no", "no.", "nó", "id_no", "i
 MAX_HEADER_SCAN_ROWS = 60
 NODE_MATCH_DIVISOR = 100.0
 MAX_NODE_MATCH_SCORE = 1.5  # Limita o peso do match de IDs para balancear com sinais de colunas vazão/população.
+NODE_ID_MATCH_SCORE = 2.0
+FLOW_COL_MATCH_SCORE = 1.0
+POPULATION_COL_MATCH_SCORE = 1.0
 
 
 def _normalize_text(value) -> str:
@@ -66,7 +69,7 @@ def _load_excel_best_sheet(path: Path) -> pd.DataFrame:
         score = 0.0
         node_col_name = next((original for norm, original in normalized_columns.items() if norm in NODE_ID_ALIASES), None)
         if node_col_name:
-            score += 2.0
+            score += NODE_ID_MATCH_SCORE
             node_values = (
                 table[node_col_name]
                 .astype(str)
@@ -76,9 +79,9 @@ def _load_excel_best_sheet(path: Path) -> pd.DataFrame:
             score += min(float(node_values.str.match(r"^N\d+$", na=False).sum()) / NODE_MATCH_DIVISOR, MAX_NODE_MATCH_SCORE)
 
         if any(("vazao" in norm) or ("flow" in norm) or ("qmh" in norm) for norm in normalized_columns):
-            score += 1.0
+            score += FLOW_COL_MATCH_SCORE
         if any("pop" in norm for norm in normalized_columns):
-            score += 1.0
+            score += POPULATION_COL_MATCH_SCORE
 
         if score > best_score:
             best_table = table
@@ -170,7 +173,11 @@ def load_cad_network(path: str | Path, source_crs: str = "EPSG:31984") -> tuple[
             node_ids_seen.add(node_id)
 
         elif etype in {"TEXT", "MTEXT"}:
-            text_value = entity.dxf.text if etype == "TEXT" else (getattr(entity.dxf, "text", None) or getattr(entity, "text", ""))
+            if etype == "TEXT":
+                text_value = entity.dxf.text
+            else:
+                dxf_text = getattr(entity.dxf, "text", None)
+                text_value = dxf_text if dxf_text is not None else getattr(entity, "text", "")
             text_value = "" if text_value is None else str(text_value).replace("\\P", " ").strip()
             normalized_label = _normalize_node_label(text_value)
             if not NODE_LABEL_PATTERN.match(normalized_label):
