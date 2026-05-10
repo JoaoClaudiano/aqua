@@ -13,7 +13,7 @@ NODE_LABEL_PATTERN = re.compile(r"^N\d+$", re.IGNORECASE)
 NODE_ID_ALIASES = {"node_id", "node id", "node", "no", "no.", "nó", "id_no", "id no", "id nó"}
 MAX_HEADER_SCAN_ROWS = 60
 NODE_MATCH_DIVISOR = 100.0
-MAX_NODE_MATCH_SCORE = 1.5
+MAX_NODE_MATCH_SCORE = 1.5  # Limita o peso do match de IDs para balancear com sinais de colunas vazão/população.
 
 
 def _normalize_text(value) -> str:
@@ -170,7 +170,7 @@ def load_cad_network(path: str | Path, source_crs: str = "EPSG:31984") -> tuple[
             node_ids_seen.add(node_id)
 
         elif etype in {"TEXT", "MTEXT"}:
-            text_value = entity.dxf.text if etype == "TEXT" else entity.text
+            text_value = entity.dxf.text if etype == "TEXT" else (getattr(entity.dxf, "text", None) or getattr(entity, "text", ""))
             text_value = "" if text_value is None else str(text_value).replace("\\P", " ").strip()
             normalized_label = _normalize_node_label(text_value)
             if not NODE_LABEL_PATTERN.match(normalized_label):

@@ -74,9 +74,14 @@ def make_location_map(boundary: gpd.GeoDataFrame, output_stem: Path, layout: str
     ax.set_axis_off()
     try:
         ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
-    except Exception:
+    except Exception as exc:
         # Em ambientes sem internet, o mapa base pode falhar; seguimos com o layout cartográfico.
-        pass
+        msg = str(exc).lower()
+        network_error_markers = ("connection", "max retries", "name resolution", "timed out", "tile.")
+        if any(marker in msg for marker in network_error_markers):
+            pass
+        else:
+            raise
     _save(fig, output_stem, formats, dpi)
     plt.close(fig)
 
